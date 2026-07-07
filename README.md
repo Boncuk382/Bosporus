@@ -57,12 +57,18 @@ bosporus/
 
 ## Status
 
-🔧 In Aufbau – Lernprojekt zur Auffrischung von Embedded-Kenntnissen im Rahmen einer
-beruflichen Neuorientierung Richtung technische Projektleitung im Embedded-Umfeld.
+🔧 In Aufbau – Projekt zur gezielten Aktualisierung von Embedded-Kenntnissen im Rahmen
+einer technischen Projektleitungsrolle im Embedded-Umfeld.
 
 ## Motivation
 
-Als (angehende) technische Projektleiterin im Embedded-Umfeld ist es essenziell, die
-Sprache und die typischen Herausforderungen der Entwicklungsebenen aus eigener Erfahrung
-zu kennen – von Cross-Compiling über Bootloader/Kernel bis zu Lieferzeiten für Bauteile
-und Testing-Strategien. Dieses Projekt dient als praktischer Nachweis dieser Kompetenzen.
+Als technische Projektleiterin im Embedded-Umfeld – unter anderem mit eigener
+Entwicklungserfahrung, etwa einer C++-Applikation auf einem Embedded-Linux-Board mit
+AVR32-Prozessor – ist mir wichtig, technische Zusammenhänge nicht nur zu koordinieren,
+sondern aus eigener Praxis zu verstehen: Cross-Compiling, Bootloader/Kernel, Toolchains,
+Lieferketten für Bauteile, Testing-Strategien.
+
+Dieses Projekt bringt dieses Verständnis auf den aktuellen Stand der Technik – von
+modernen Build-Systemen bis zu heutigen Entwicklungs-Workflows – und dient als
+praktischer Nachweis dieser Kompetenz für eine technische Projektleitungsrolle im
+Embedded-Umfeld.
