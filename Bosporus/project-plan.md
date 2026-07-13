@@ -1,27 +1,30 @@
-# Projektplan – Bosporus
+# Project plan – Bosporus
 
-## Phasenübersicht
+## Phase overview
 
-| Phase | Titel                          | Inhalt                                                                 | Ergebnis / Meilenstein                        |
-|-------|----------------------------------|------------------------------------------------------------------------|-----------------------------------------------|
-| 0     | Vorbereitung                     | Hardware bestellen, Entwicklungsumgebung einrichten                    | PlatformIO + Toolchain lauffähig               |
-| 1     | Sensor-Node                      | ESP32 programmieren, Sensor auslesen, MQTT-Verbindung aufbauen         | Sensor sendet Messwerte per MQTT               |
-| 2     | Embedded-Linux-Gateway           | Buildroot-Image konfigurieren und bauen, auf Raspberry Pi aufspielen    | Eigenes Linux-Image bootet auf dem Pi          |
-| 3     | Integration                      | MQTT-Broker + Verarbeitungsskript + Datenbank auf dem Gateway einrichten | Messwerte werden persistent gespeichert        |
-| 4     | Visualisierung                   | Grafana/Dashboard anbinden                                              | Live-Verlauf der Messwerte sichtbar            |
-| 5     | Dokumentation & Portfolio        | Doku finalisieren, GitHub-Repo aufräumen, ggf. kurzen Erfahrungsbericht schreiben | Präsentierbares Projekt für Bewerbungen        |
+| Phase | Title                          | Content                                                                | Milestone                                     | Status | Date |
+|-------|----------------------------------|--------------------------------------------------------------------------|-------------------------------------------------|--------|------|
+| 0     | Preparation                     | Order hardware, set up development environment                          | PlatformIO + toolchain working                 | ✅ Done | *(add date)* |
+| 1     | Sensor node                     | Program the ESP32, read the sensor, set up MQTT connection              | Sensor sends readings                          | ✅ Done (Serial; MQTT publish still open) | *(add date)* |
+| 2     | Embedded Linux gateway          | Configure and build the Buildroot image, flash it onto the Raspberry Pi | Custom Linux image boots on the Pi             | ⏳ Not started | — |
+| 3     | Integration                     | Set up MQTT broker + processing script + database on the gateway         | Readings are stored persistently                | ⏳ Not started | — |
+| 4     | Visualization                   | Connect Grafana/dashboard                                                | Live history of readings visible                | ⏳ Not started | — |
+| 5     | Documentation & portfolio       | Finalize docs, clean up GitHub repo, optionally write a short write-up   | Presentable project for job applications         | 🔄 Ongoing | — |
 
-## Beispielhafter Zeitrahmen (anpassbar an verfügbare Zeit)
+*(Replace the "add date" placeholders with the actual dates you did the work — that's
+useful context for anyone reading the repo, and honestly satisfying to fill in.)*
 
-- **Wochen 1–2**: Phase 0 + 1 (Sensor-Node)
-- **Wochen 3–5**: Phase 2 (Embedded Linux – erfahrungsgemäß der zeitintensivste Teil)
-- **Woche 6**: Phase 3 (Integration)
-- **Woche 7**: Phase 4 (Dashboard)
-- **Woche 8**: Phase 5 (Doku & Feinschliff)
+## Example timeframe (adjust to your available time)
 
-## Definition of Done je Phase
+- **Weeks 1–2**: Phase 0 + 1 (sensor node)
+- **Weeks 3–5**: Phase 2 (embedded Linux – typically the most time-consuming part)
+- **Week 6**: Phase 3 (integration)
+- **Week 7**: Phase 4 (dashboard)
+- **Week 8**: Phase 5 (docs & polish)
 
-Eine Phase gilt als abgeschlossen, wenn:
-1. die Funktion nachweislich läuft (kurze Demo/Screenshot/Log),
-2. die zugehörige Konfiguration/der Code im Repo versioniert ist,
-3. die Doku (README oder betroffenes docs/-File) aktualisiert wurde.
+## Definition of done per phase
+
+A phase counts as complete when:
+1. the functionality demonstrably works (a short demo/screenshot/log),
+2. the related configuration/code is version-controlled in the repo,
+3. the documentation (README or the relevant docs/ file) has been updated.
