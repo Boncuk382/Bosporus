@@ -6,18 +6,18 @@ This dated log documents the proceess and the key steps, and the progress of the
 
 ## *10.07.2026* – Phase 1: Sensor node soldering & first readings
 
-# What I did
+### What I did
 
-## Setup HW
+**Setup HW**
 Soldered the two 15-pin header strips onto the Arduino Nano ESP32 (first solder joints
 in a while — a bit rough around the edges, but electrically sound). Wired the DHT22 to
 the board on a breadboard (VCC → 3V3, DATA → D2, GND → GND). 
  
-## Setup development environment
-Set up PlatformIO in VS Code and 
-Add DHT library
-Add the code to src/main.cpp
-Flashed a first code to read temperature and humidity.
+**Setup development environment**
+- Set up PlatformIO in VS Code and 
+- Add DHT library
+- Add the code to src/main.cpp
+- Flashed a first code to read temperature and humidity.
 
 **Artifacts**
 
