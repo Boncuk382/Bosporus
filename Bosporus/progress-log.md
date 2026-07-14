@@ -20,7 +20,7 @@ Flashed a first code to read temperature and humidity.
 **Artifacts**
 
 Soldered board, top view:
-![Hardware Setup](images/Arduino wired with DHT22.jpeg)
+![Hardware Setup](images/setup-esp32-with-DHT22.jpeg)
 
 Soldered board, angled view:
 
