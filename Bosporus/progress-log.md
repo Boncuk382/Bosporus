@@ -7,6 +7,7 @@ This dated log documents the proceess and the key steps, and the progress of the
 ## *10.07.2026* – Phase 1: Sensor node soldering & first readings
 
 # What I did
+
 ## Setup HW
 Soldered the two 15-pin header strips onto the Arduino Nano ESP32 (first solder joints
 in a while — a bit rough around the edges, but electrically sound). Wired the DHT22 to
