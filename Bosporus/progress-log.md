@@ -20,16 +20,11 @@ the board on a breadboard (VCC → 3V3, DATA → D2, GND → GND).
 - Flashed a first code to read temperature and humidity.
 
 **Artifacts**
+
 ![Hardware Setup](images/setup-esp32-with-DHT22.jpeg)
 
 Serial monitor output, confirming the sensor is being read correctly:
 ![Serial monitor output](images/sensor-data-output.png)
-
-Humidity: 40.00 %  Temperature: 28.80 °C
-Humidity: 40.00 %  Temperature: 28.80 °C
-Humidity: 39.80 %  Temperature: 28.80 °C
-Humidity: 39.70 %  Temperature: 28.80 °C
-Humidity: 39.50 %  Temperature: 28.80 °C
 
 **What went wrong / what I learned**
 
