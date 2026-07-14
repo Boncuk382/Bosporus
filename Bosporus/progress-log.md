@@ -21,7 +21,7 @@ Flashed a first code to read temperature and humidity.
 
 Soldered board, top view:
 
-![Soldered Nano ESP32, top view](images/Arduino wired with DHT22.jpeg)
+![Arduino wired with DHT22](images/Arduino wired with DHT22.jpeg)
 
 Soldered board, angled view:
 
