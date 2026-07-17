@@ -43,19 +43,28 @@ Serial monitor output, confirming the sensor is being read correctly:
 
 ---
 
-## *(add date)* – Phase 2: Embedded Linux gateway
+## *16.07.2026* – Phase 2: Embedded Linux gateway
 
-*(fill in once you start this phase — same structure: what you did, evidence, what went
-wrong, result)*
+### What I did
+**HW Setup**
+Computer: Macbook Air, Apple M3
 
----
+**Raspberry Pi 4 Model B**
+For this project, I wanted to learn embedded Linux in a realistic context — and IoT projects are a natural fit for that, because they almost always call for a gateway in the design. Choosing to build one gave me a concrete reason to get hands-on with embedded Linux, rather than learning it in the abstract.
+A gateway earns its place in an IoT architecture for three main reasons:
 
-### Template for new entries
+Centralized connectivity — sensors don't each need their own network hardware; the gateway handles that once, for all of them. The Raspberry Pi covers this well, with WiFi, Ethernet (useful as a stable fallback), and Bluetooth built in.
+Centralized security — patching, firewalling, and access control happen on one device instead of being replicated (and potentially neglected) across every sensor node — which is both more secure and cheaper to maintain at scale.
+A proper OS for real services — running things like Mosquitto, a database, and Grafana requires a full filesystem, networking stack, and process management — capabilities a microcontroller doesn't have, but a real OS does.
 
-```
-## <date> – <phase / topic>
+I chose the Raspberry Pi specifically as my learning vehicle for embedded Linux. Compared to alternatives like the Orange Pi or BeagleBone Black, it has the strongest documentation and the largest community — which matters most when you're learning, since it means more tutorials and faster troubleshooting when something goes wrong.
 
-**What I did**
+**MicroSD:** Samsung EVO Plus (128 GB, microSDXC, U3, UHS-I)
+Because the Pi has no built-in storage, no internal flash, no eMMC. This is the only storage for everything: OS, logs, permanent home of the OS. Every time Pi boots, reads a file or writes a log. 
+
+**Card Reader:** StarTech USB 3.0 card reader with USB-C
+
+
 
 **Evidence**
 
