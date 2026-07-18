@@ -85,7 +85,7 @@ I have downloaded the imager_2.0.10.dmg from raspberrypi.com/software and instal
 **Writing the Standard Linux OS into SD Card**
 - Powered Raspberry Pi, RED LED lightnin solid, Green LED blinking
 - insert the SD Card into the socket on the Raspberry Pi
-- Accessing the Raspberry Pi with **ssh boncuk“bosposrus.local**
+- Accessing the Raspberry Pi with **ssh boncukbosposrus.local**
 
 **Evidence**
 - ping bosporus.local results as ``ING bosporus.local (192.168.1.170): 56 data bytes
@@ -97,7 +97,7 @@ I have downloaded the imager_2.0.10.dmg from raspberrypi.com/software and instal
 64 bytes from 192.168.1.170: icmp_seq=5 ttl=64 time=16.110 ms``
 . That means Pi is fully up and reachable on my network.
 - Accessing with **ssh boncuk“bosposrus.local** connection refused. The Problem lies that ssh server unreachable. The trick "headless SSH enable" with **touch /Volumes/bootfs/ssh** then eject the bootfs with **diskutil eject /Volumes/bootfs**
-- Next accesing try with **ssh boncuk“bosposrus.local** results with 
+- Next accesing try with **ssh boncukbosposrus.local** results with ````
 
 **What went wrong / what I learned**
 
