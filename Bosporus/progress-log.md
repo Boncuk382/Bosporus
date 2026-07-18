@@ -47,7 +47,9 @@ Serial monitor output, confirming the sensor is being read correctly:
 
 ### What I did
 **HW Setup**
-Computer: Macbook Air, Apple M3
+
+**Computer** 
+Macbook Air, Apple M3
 
 **Raspberry Pi 4 Model B**
 For this project, I wanted to learn embedded Linux in a realistic context — and IoT projects are a natural fit for that, because they almost always call for a gateway in the design. Choosing to build one gave me a concrete reason to get hands-on with embedded Linux, rather than learning it in the abstract.
@@ -63,8 +65,10 @@ I chose the Raspberry Pi specifically as my learning vehicle for embedded Linux.
 Because the Pi has no built-in storage, no internal flash, no eMMC. This is the only storage for everything: OS, logs, permanent home of the OS. Every time Pi boots, reads a file or writes a log. 
 
 **Card Reader:** StarTech USB 3.0 card reader with USB-C
+I ordered this card reader with USB-C so that I can read the SD card with my MacBook Air, because my MacBook Air does not have a built-in interface capable of reading SD cards. 
 
-
+**Ethernet adapter** Belkin USB-C auf Gigabit Ethernet Adapter
+The Ethernet adapter is the backup for a stable connection if Wifi or mDNS doesnt work. bosporus.local resolves to an IP address via mDNS. If this fails, I need to connect by IP address directly, using a wired connection, which is more predictable. 
 
 **Evidence**
 
