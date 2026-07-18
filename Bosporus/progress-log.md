@@ -8,7 +8,7 @@ This dated log documents the proceess and the key steps, and the progress of the
 
 ### What I did
 
-**Setup HW**
+**HW Setup**
 Soldered the two 15-pin header strips onto the Arduino Nano ESP32 (first solder joints
 in a while — a bit rough around the edges, but electrically sound). Wired the DHT22 to
 the board on a breadboard (VCC → 3V3, DATA → D2, GND → GND). 
@@ -70,7 +70,34 @@ I ordered this card reader with USB-C so that I can read the SD card with my Mac
 **Ethernet adapter** Belkin USB-C auf Gigabit Ethernet Adapter
 The Ethernet adapter is the backup for a stable connection if Wifi or mDNS doesnt work. bosporus.local resolves to an IP address via mDNS. If this fails, I need to connect by IP address directly, using a wired connection, which is more predictable. 
 
+**SW Setup**
+
+**Step 1** Prove Pi works with standard Raspberyy Pi OS.
+
+**Installation and Configuration Raspberry Pi Imager** 
+I have downloaded the imager_2.0.10.dmg from raspberrypi.com/software and installed onto the Applications folder on my MacBook Air. Then I have launched the imager in the Applications folder and the following configurations:
+- selected **Raspberry Pi 4**
+- selected **Raspberyy Pi OS (other)** and then **Raspberry Pi OS Lite (64-bit)**
+- confirmed SD card size - 119.4 GB
+- ticked "Exclude system drives" to prevent erasing my Mac's startup disk accidentally
+- defined **Hostname:** bosporus, **Time zone:** Eurpoe/Zurich, **Keyboard layout:** Swiss German (ch), then username and password and enabled **SSH**
+
+**Writing the Standard Linux OS into SD Card**
+- Powered Raspberry Pi, RED LED lightnin solid, Green LED blinking
+- insert the SD Card into the socket on the Raspberry Pi
+- Accessing the Raspberry Pi with **ssh boncuk“bosposrus.local**
+
 **Evidence**
+- ping bosporus.local results as ``ING bosporus.local (192.168.1.170): 56 data bytes
+64 bytes from 192.168.1.170: icmp_seq=0 ttl=64 time=10.223 ms
+64 bytes from 192.168.1.170: icmp_seq=1 ttl=64 time=15.288 ms
+64 bytes from 192.168.1.170: icmp_seq=2 ttl=64 time=15.102 ms
+64 bytes from 192.168.1.170: icmp_seq=3 ttl=64 time=16.623 ms
+64 bytes from 192.168.1.170: icmp_seq=4 ttl=64 time=16.508 ms
+64 bytes from 192.168.1.170: icmp_seq=5 ttl=64 time=16.110 ms``
+. That means Pi is fully up and reachable on my network.
+- Accessing with **ssh boncuk“bosposrus.local** connection refused. The Problem lies that ssh server unreachable. The trick "headless SSH enable" with **touch /Volumes/bootfs/ssh** then eject the bootfs with **diskutil eject /Volumes/bootfs**
+- Next accesing try with **ssh boncuk“bosposrus.local** results with 
 
 **What went wrong / what I learned**
 
