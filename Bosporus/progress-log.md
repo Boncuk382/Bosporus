@@ -85,7 +85,7 @@ I have downloaded the imager_2.0.10.dmg from raspberrypi.com/software and instal
 **Writing the Standard Linux OS into SD Card**
 - Powered Raspberry Pi, RED LED lightnin solid, Green LED blinking
 - insert the SD Card into the socket on the Raspberry Pi
-- Accessing the Raspberry Pi with **ssh boncukbosposrus.local**
+- Accessing the Raspberry Pi with **ssh boncuk@bosporus.local**
 
 **Evidence**
 - ping bosporus.local results as ``ING bosporus.local (192.168.1.170): 56 data bytes
@@ -96,8 +96,49 @@ I have downloaded the imager_2.0.10.dmg from raspberrypi.com/software and instal
 64 bytes from 192.168.1.170: icmp_seq=4 ttl=64 time=16.508 ms
 64 bytes from 192.168.1.170: icmp_seq=5 ttl=64 time=16.110 ms``
 . That means Pi is fully up and reachable on my network.
-- Accessing with **ssh boncuk“bosposrus.local** connection refused. The Problem lies that ssh server unreachable. The trick "headless SSH enable" with **touch /Volumes/bootfs/ssh** then eject the bootfs with **diskutil eject /Volumes/bootfs**
-- Next accesing try with **ssh boncukbosposrus.local** results with ````
+- Accessing with **ssh boncuk@bosposrus.local** connection refused. The Problem lies that ssh server unreachable. The trick "headless SSH enable" with **touch /Volumes/bootfs/ssh** then eject the bootfs with **diskutil eject /Volumes/bootfs**
+- Next accesing try with **ssh boncuk@bosposrus.local** results with ``The authenticity of host 'bosporus.local (2a02:169:1f0:0:2ecf:67ff:fe54:ac07)' can't be established.
+ED25519 key fingerprint is SHA256:xXlo3N5Eoltn/7qn+HR8HrAeZsaEHk4xM359dxpS9m8.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])?``.
+- Answering with yes results ``Warning: Permanently added 'bosporus.local' (ED25519) to the list of known hosts.
+Connection closed by 2a02:169:1f0:0:2ecf:67ff:fe54:ac07 port 22``
+- Next try to call ssh sehrver with **ssh boncuk@bosporus.local** prompted to enter the password. Entering the password results ``% ssh boncuk@bosporus.local
+boncuk@bosporus.local's password: 
+Linux bosporus 6.18.34+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.18.34-1+rpt1 (2026-06-09) aarch64
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+_____________________________________________________________________
+WARNING! Your environment specifies an invalid locale.
+ The unknown environment variables are:
+   LC_CTYPE=UTF-8 LC_ALL=
+ This can affect your user experience significantly, including the
+ ability to manage packages. You may install the locales by running:
+ sudo dpkg-reconfigure locales
+ and select the missing language. Alternatively, you can install the
+ locales-all package:
+ sudo apt-get install locales-all
+To disable this message for all users, run:
+   sudo touch /var/lib/cloud/instance/locale-check.skip
+_____________________________________________________________________
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
+-bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory`` 
+
+- Updating the Pi with **sudo apt-get update** and **sudo apt-get install -y locales-all** removes the warnings and I am on the Pi: ``Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+locales-all is already the newest version (2.41-12+rpt1+deb13u3).
+0 upgraded, 0 newly installed, 0 to remove and 56 not upgraded.
+boncuk@bosporus:~ $``
 
 **What went wrong / what I learned**
 
