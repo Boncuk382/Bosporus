@@ -1,74 +1,76 @@
-# Bosporus – Embedded-Systems-Portfolio-Projekt
+# Bosporus – Embedded Systems Portfolio Project
 
-Ein End-to-End-Projekt zur Vertiefung von Embedded Elektronik, Embedded Linux und
-Systemintegration – aufgesetzt und dokumentiert wie ein reales Produktentwicklungsprojekt.
+An end-to-end project to refresh and demonstrate skills in embedded electronics,
+embedded Linux, and system integration – set up and documented like a real product
+development project.
 
-> **Zum Namen**: Der Bosporus ist die Meerenge, die zwei Kontinente verbindet – genau wie
-> dieses Gateway die Sensor-Hardware-Welt mit der Software-/Visualisierungs-Welt verbindet.
+> **About the name**: The Bosporus is the strait that connects two continents – just
+> like this gateway connects the sensor-hardware world with the software/visualization world.
 
-## Ziel des Projekts
+## Project goal
 
-Dieses Projekt verbindet drei zentrale Embedded-Disziplinen in einem gemeinsamen System:
+This project ties together three core embedded disciplines in one system:
 
-- **Embedded Elektronik / Microcontroller**: Ein Sensor-Node liest Umgebungsdaten
-  (Temperatur, Luftfeuchtigkeit) aus und sendet sie drahtlos.
-- **Embedded Linux**: Ein Gateway auf Basis eines selbst gebauten Linux-Images
-  verarbeitet die Daten.
-- **Systemintegration & Visualisierung**: Ein Dashboard macht die Daten sichtbar.
+- **Embedded electronics / microcontroller**: A sensor node reads environmental data
+  (temperature, humidity) and transmits it wirelessly.
+- **Embedded Linux**: A gateway based on a self-built Linux image processes the data.
+- **System integration & visualization**: A dashboard makes the data visible.
 
-Neben dem technischen Aufbau liegt der Fokus bewusst auch auf **Projektmanagement-Artefakten**
-(Anforderungen, Architektur, Meilensteinplan, Risikoregister) – als Nachweis, dass technisches
-Verständnis und strukturierte Projektsteuerung zusammen gedacht werden.
+Alongside the technical build, the focus is deliberately also on **project management
+artifacts** (requirements, architecture, milestone plan, risk register) – as evidence
+that technical understanding and structured project control go hand in hand.
 
-## Architekturüberblick
+## Architecture overview
 
 ```
-Sensor-Node  --MQTT-->  Gateway  --Daten-->  Dashboard
-(ESP32,                 (Raspberry Pi,        (Grafana /
- FreeRTOS)               Embedded Linux)        Web-UI)
+Sensor node  --MQTT-->  Gateway  --Data-->  Dashboard
+(ESP32,                 (Raspberry Pi,       (Grafana /
+ FreeRTOS)               Embedded Linux)       Web UI)
 ```
 
-Details siehe [docs/architecture.md](docs/architecture.md).
+Details in [docs/architecture.md](docs/architecture.md).
 
-## Verwendete Technologien
+## Technologies used
 
-| Ebene            | Technologie                              |
+| Layer            | Technology                                |
 |-------------------|-------------------------------------------|
-| Sensor-Node       | ESP32, FreeRTOS, PlatformIO, DHT22-Sensor |
-| Gateway-OS        | Buildroot (später optional Yocto)         |
-| Kommunikation     | MQTT (Mosquitto Broker)                   |
-| Datenhaltung      | SQLite / InfluxDB                         |
-| Visualisierung    | Grafana                                   |
+| Sensor node       | ESP32, FreeRTOS, PlatformIO, DHT22 sensor |
+| Gateway OS        | Buildroot (optionally Yocto later)        |
+| Communication     | MQTT (Mosquitto broker)                   |
+| Data storage      | SQLite / InfluxDB                         |
+| Visualization     | Grafana                                   |
 
-## Projektstruktur
+## Project structure
 
 ```
 bosporus/
 ├── README.md
 ├── docs/
-│   ├── architecture.md      # Systemarchitektur im Detail
-│   ├── requirements.md       # Funktionale & nicht-funktionale Anforderungen
-│   ├── project-plan.md       # Phasen, Meilensteine, Zeitplan
-│   └── risk-register.md      # Risiken und Gegenmaßnahmen
-├── sensor-node/               # Firmware für den ESP32 (folgt)
-├── gateway/                    # Buildroot-Konfiguration, Skripte (folgt)
-└── dashboard/                  # Grafana-Konfiguration / Web-UI (folgt)
+│   ├── architecture.md      # Detailed system architecture
+│   ├── requirements.md      # Functional & non-functional requirements
+│   ├── project-plan.md      # Phases, milestones, timeline
+│   ├── progress-log.md      # Dated build log with photos/screenshots
+│   ├── risk-register.md     # Risks and mitigations
+│   ├── glossary.md          # Abbreviations and terms used
+│   └── images/              # Photos and screenshots from the build
+├── sensor-node/              # Firmware for the ESP32 (to follow)
+├── gateway/                   # Buildroot configuration, scripts (to follow)
+└── dashboard/                 # Grafana configuration / web UI (to follow)
 ```
 
 ## Status
 
-🔧 In Aufbau – Projekt zur gezielten Aktualisierung von Embedded-Kenntnissen im Rahmen
-einer technischen Projektleitungsrolle im Embedded-Umfeld.
+🔧 In progress – project for the targeted refresh of embedded knowledge as part of a
+technical project leadership role in the embedded space.
 
 ## Motivation
 
-Als technische Projektleiterin im Embedded-Umfeld – unter anderem mit eigener
-Entwicklungserfahrung, etwa einer C++-Applikation auf einem Embedded-Linux-Board mit
-AVR32-Prozessor – ist mir wichtig, technische Zusammenhänge nicht nur zu koordinieren,
-sondern aus eigener Praxis zu verstehen: Cross-Compiling, Bootloader/Kernel, Toolchains,
-Lieferketten für Bauteile, Testing-Strategien.
+As a technical project lead in the embedded space – including hands-on development
+experience of my own, such as a C++ application on an embedded Linux board with an
+AVR32 processor – it matters to me not just to coordinate technical work, but to
+understand it from practical experience: cross-compiling, bootloader/kernel, toolchains,
+component supply chains, testing strategies.
 
-Dieses Projekt bringt dieses Verständnis auf den aktuellen Stand der Technik – von
-modernen Build-Systemen bis zu heutigen Entwicklungs-Workflows – und dient als
-praktischer Nachweis dieser Kompetenz für eine technische Projektleitungsrolle im
-Embedded-Umfeld.
+This project brings that understanding up to the current state of the art – from modern
+build systems to today's development workflows – and serves as practical evidence of
+this competence for a technical project leadership role in the embedded space.
