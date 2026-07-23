@@ -9,6 +9,7 @@ This dated log documents the proceess and the key steps, and the progress of the
 ### What I did
 
 **HW Setup**
+
 Soldered the two 15-pin header strips onto the Arduino Nano ESP32 (first solder joints
 in a while — a bit rough around the edges, but electrically sound). Wired the DHT22 to
 the board on a breadboard (VCC → 3V3, DATA → D2, GND → GND). 
