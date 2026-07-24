@@ -1,6 +1,6 @@
 # Progress log – Bosporus
 
-This dated log documents the proceess and the key steps, and the progress of the project along with its artifacts.
+This dated log documents the process and the key steps, and the progress of the project along with its artifacts.
 
 ---
 
@@ -12,19 +12,20 @@ This dated log documents the proceess and the key steps, and the progress of the
 
 Soldered the two 15-pin header strips onto the Arduino Nano ESP32 (first solder joints
 in a while — a bit rough around the edges, but electrically sound). Wired the DHT22 to
-the board on a breadboard (VCC → 3V3, DATA → D2, GND → GND). 
- 
-**Setup development environment**
-- Set up PlatformIO in VS Code and 
-- Add DHT library
-- Add the code to src/main.cpp
-- Flashed a first code to read temperature and humidity.
+the board on a breadboard (VCC → 3V3, DATA → D2, GND → GND).
+
+**SW Setup**
+- Set up PlatformIO in VS Code
+- Added the DHT library
+- Added the code to `src/main.cpp`
+- Flashed a first build to read temperature and humidity
 
 **Artifacts**
 
 ![Hardware Setup](images/setup-esp32-with-DHT22.jpeg)
 
 Serial monitor output, confirming the sensor is being read correctly:
+
 ![Serial monitor output](images/sensor-data-output.png)
 
 **What went wrong / what I learned**
@@ -47,65 +48,111 @@ Serial monitor output, confirming the sensor is being read correctly:
 ## *16.07.2026* – Phase 2: Embedded Linux gateway
 
 ### What I did
+
 **HW Setup**
 
-**Computer** 
-Macbook Air, Apple M3
+**Computer**
+MacBook Air, Apple M3
 
 **Raspberry Pi 4 Model B**
-For this project, I wanted to learn embedded Linux in a realistic context — and IoT projects are a natural fit for that, because they almost always call for a gateway in the design. Choosing to build one gave me a concrete reason to get hands-on with embedded Linux, rather than learning it in the abstract.
+
+For this project, I wanted to learn embedded Linux in a realistic context — and IoT
+projects are a natural fit for that, because they almost always call for a gateway in
+the design. Choosing to build one gave me a concrete reason to get hands-on with
+embedded Linux, rather than learning it in the abstract.
+
 A gateway earns its place in an IoT architecture for three main reasons:
 
-Centralized connectivity — sensors don't each need their own network hardware; the gateway handles that once, for all of them. The Raspberry Pi covers this well, with WiFi, Ethernet (useful as a stable fallback), and Bluetooth built in.
-Centralized security — patching, firewalling, and access control happen on one device instead of being replicated (and potentially neglected) across every sensor node — which is both more secure and cheaper to maintain at scale.
-A proper OS for real services — running things like Mosquitto, a database, and Grafana requires a full filesystem, networking stack, and process management — capabilities a microcontroller doesn't have, but a real OS does.
+1. **Centralized connectivity** — sensors don't each need their own network hardware;
+   the gateway handles that once, for all of them. The Raspberry Pi covers this well,
+   with WiFi, Ethernet (useful as a stable fallback), and Bluetooth built in.
+2. **Centralized security** — patching, firewalling, and access control happen on one
+   device instead of being replicated (and potentially neglected) across every sensor
+   node — which is both more secure and cheaper to maintain at scale.
+3. **A proper OS for real services** — running things like Mosquitto, a database, and
+   Grafana requires a full filesystem, networking stack, and process management —
+   capabilities a microcontroller doesn't have, but a real OS does.
 
-I chose the Raspberry Pi specifically as my learning vehicle for embedded Linux. Compared to alternatives like the Orange Pi or BeagleBone Black, it has the strongest documentation and the largest community — which matters most when you're learning, since it means more tutorials and faster troubleshooting when something goes wrong.
+I chose the Raspberry Pi specifically as my learning vehicle for embedded Linux.
+Compared to alternatives like the Orange Pi or BeagleBone Black, it has the strongest
+documentation and the largest community — which matters most when you're learning,
+since it means more tutorials and faster troubleshooting when something goes wrong.
 
 **MicroSD:** Samsung EVO Plus (128 GB, microSDXC, U3, UHS-I)
-Because the Pi has no built-in storage, no internal flash, no eMMC. This is the only storage for everything: OS, logs, permanent home of the OS. Every time Pi boots, reads a file or writes a log. 
+
+The Raspberry Pi has no internal storage of its own — no built-in flash, no eMMC. The
+microSD card is therefore the Pi's only storage device, holding the OS, all files, and
+logs for as long as it runs. Every time the Pi boots, reads a file, or writes a log, it
+does so on this card.
 
 **Card Reader:** StarTech USB 3.0 card reader with USB-C
-I ordered this card reader with USB-C so that I can read the SD card with my MacBook Air, because my MacBook Air does not have a built-in interface capable of reading SD cards. 
 
-**Ethernet adapter** Belkin USB-C auf Gigabit Ethernet Adapter
-The Ethernet adapter is the backup for a stable connection if Wifi or mDNS doesnt work. bosporus.local resolves to an IP address via mDNS. If this fails, I need to connect by IP address directly, using a wired connection, which is more predictable. 
+I ordered this card reader with USB-C so that I can read the SD card with my MacBook
+Air, because my MacBook Air does not have a built-in interface capable of reading SD
+cards.
+
+**Ethernet adapter:** Belkin USB-C to Gigabit Ethernet Adapter
+
+The Ethernet adapter is the backup for a stable connection if WiFi or mDNS doesn't
+work. `bosporus.local` resolves to an IP address via mDNS. If this fails, I need to
+connect by IP address directly, using a wired connection, which is more predictable.
 
 **SW Setup**
 
-**Step 1** Prove Pi works with standard Raspberyy Pi OS.
+**Step 1: Prove the Pi works with standard Raspberry Pi OS**
 
-**Installation and Configuration Raspberry Pi Imager** 
-I have downloaded the imager_2.0.10.dmg from raspberrypi.com/software and installed onto the Applications folder on my MacBook Air. Then I have launched the imager in the Applications folder and the following configurations:
-- selected **Raspberry Pi 4**
-- selected **Raspberyy Pi OS (other)** and then **Raspberry Pi OS Lite (64-bit)**
-- confirmed SD card size - 119.4 GB
-- ticked "Exclude system drives" to prevent erasing my Mac's startup disk accidentally
-- defined **Hostname:** bosporus, **Time zone:** Eurpoe/Zurich, **Keyboard layout:** Swiss German (ch), then username and password and enabled **SSH**
+*Installation and configuration of Raspberry Pi Imager*
 
-**Writing the Standard Linux OS into SD Card**
-- Powered Raspberry Pi, RED LED lightnin solid, Green LED blinking
-- insert the SD Card into the socket on the Raspberry Pi
-- Accessing the Raspberry Pi with **ssh boncuk@bosporus.local**
+I downloaded `imager_2.0.10.dmg` from raspberrypi.com/software and installed it into
+the Applications folder on my MacBook Air. I then launched the Imager and used the
+following configuration:
+- Selected **Raspberry Pi 4**
+- Selected **Raspberry Pi OS (other)**, then **Raspberry Pi OS Lite (64-bit)**
+- Confirmed the SD card size — 119.4 GB
+- Ticked "Exclude system drives" to prevent accidentally erasing my Mac's startup disk
+- Set **Hostname:** `bosporus`, **Time zone:** Europe/Zurich, **Keyboard layout:**
+  Swiss German (ch), then a username and password, and enabled **SSH**
 
-**Evidence**
-- ping bosporus.local results as ``ING bosporus.local (192.168.1.170): 56 data bytes
+*Writing the standard Linux OS onto the SD card and first boot*
+- Inserted the SD card into the Raspberry Pi's card slot
+- Powered the Raspberry Pi — RED LED lit solid, GREEN LED blinking (indicating active boot)
+- Attempted to access the Raspberry Pi with `ssh boncuk@bosporus.local`
+
+**Artifacts**
+
+`ping bosporus.local` confirmed the Pi is fully up and reachable on my network:
+```
+PING bosporus.local (192.168.1.170): 56 data bytes
 64 bytes from 192.168.1.170: icmp_seq=0 ttl=64 time=10.223 ms
 64 bytes from 192.168.1.170: icmp_seq=1 ttl=64 time=15.288 ms
 64 bytes from 192.168.1.170: icmp_seq=2 ttl=64 time=15.102 ms
 64 bytes from 192.168.1.170: icmp_seq=3 ttl=64 time=16.623 ms
 64 bytes from 192.168.1.170: icmp_seq=4 ttl=64 time=16.508 ms
-64 bytes from 192.168.1.170: icmp_seq=5 ttl=64 time=16.110 ms``
-. That means Pi is fully up and reachable on my network.
-- Accessing with **ssh boncuk@bosposrus.local** connection refused. The Problem lies that ssh server unreachable. The trick "headless SSH enable" with **touch /Volumes/bootfs/ssh** then eject the bootfs with **diskutil eject /Volumes/bootfs**
-- Next accesing try with **ssh boncuk@bosposrus.local** results with ``The authenticity of host 'bosporus.local (2a02:169:1f0:0:2ecf:67ff:fe54:ac07)' can't be established.
+64 bytes from 192.168.1.170: icmp_seq=5 ttl=64 time=16.110 ms
+```
+
+First attempt, `ssh boncuk@bosporus.local` → **connection refused**. The problem was
+that the SSH server wasn't reachable. Fixed with the "headless SSH enable" trick:
+`touch /Volumes/bootfs/ssh`, then ejected the boot partition with
+`diskutil eject /Volumes/bootfs`.
+
+Next attempt:
+```
+The authenticity of host 'bosporus.local (2a02:169:1f0:0:2ecf:67ff:fe54:ac07)' can't be established.
 ED25519 key fingerprint is SHA256:xXlo3N5Eoltn/7qn+HR8HrAeZsaEHk4xM359dxpS9m8.
 This key is not known by any other names.
-Are you sure you want to continue connecting (yes/no/[fingerprint])?``.
-- Answering with yes results ``Warning: Permanently added 'bosporus.local' (ED25519) to the list of known hosts.
-Connection closed by 2a02:169:1f0:0:2ecf:67ff:fe54:ac07 port 22``
-- Next try to call ssh sehrver with **ssh boncuk@bosporus.local** prompted to enter the password. Entering the password results ``% ssh boncuk@bosporus.local
-boncuk@bosporus.local's password: 
+Are you sure you want to continue connecting (yes/no/[fingerprint])?
+```
+
+Answering `yes` resulted in:
+```
+Warning: Permanently added 'bosporus.local' (ED25519) to the list of known hosts.
+Connection closed by 2a02:169:1f0:0:2ecf:67ff:fe54:ac07 port 22
+```
+
+Next attempt, `ssh boncuk@bosporus.local`, prompted for a password. Entering it succeeded:
+```
+boncuk@bosporus.local's password:
 Linux bosporus 6.18.34+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.18.34-1+rpt1 (2026-06-09) aarch64
 The programs included with the Debian GNU/Linux system are free software;
 the exact distribution terms for each program are described in the
@@ -126,22 +173,21 @@ To disable this message for all users, run:
    sudo touch /var/lib/cloud/instance/locale-check.skip
 _____________________________________________________________________
 -bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory`` 
+```
 
-- Updating the Pi with **sudo apt-get update** and **sudo apt-get install -y locales-all** removes the warnings and I am on the Pi: ``Reading package lists... Done
+Updating the Pi with `sudo apt-get update` and `sudo apt-get install -y locales-all`
+did not remove the warning — turned out `locales-all` was already installed, so the
+actual cause was a malformed locale variable (`LC_CTYPE=UTF-8`) being sent by my own
+Mac's terminal, not anything missing on the Pi:
+```
+Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
 locales-all is already the newest version (2.41-12+rpt1+deb13u3).
 0 upgraded, 0 newly installed, 0 to remove and 56 not upgraded.
-boncuk@bosporus:~ $``
+boncuk@bosporus:~ $
+```
 
 **What went wrong / what I learned**
 
 **Result**
-```
