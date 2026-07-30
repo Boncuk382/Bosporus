@@ -187,6 +187,28 @@ locales-all is already the newest version (2.41-12+rpt1+deb13u3).
 0 upgraded, 0 newly installed, 0 to remove and 56 not upgraded.
 boncuk@bosporus:~ $
 ```
+**Step 2: Configure and build the Buildroot image, flash it onto the Raspberry Pi**
+What's next:
+Docker Desktop -> Buildroot source -> configure -> build -> flash -> boot your own image. 
+
+**Installing Docker Desktop**
+Docker is the environment to build Buildroot image, suche Buildroot requires a Linux machine and my Mac isnt one. Docker desktop works by running a small Linux virtual machine in the background. Docker is just a convenient way to get a Linux computer on Mac.Professional embedded workflow run on actual Linux machines. Building Linux images belongs on Linux: Docker-on-Mac is a practical personal-development bridge to get there without owning a Linux machine, not a professional release process. 
+
+- installed docker desktop from docker.com/products/docker-desktop -> "Download for Mac -Apple Silicon"
+- install Docker.dmg into Applications
+- Confirm with "docker run --rm hello-world" -> resulted with "Hello from Docker"
+
+**get the Buildroot source**
+This will be done inside a Linux container, not directly on my Mac:
+- docker run -it --rm -v $(pwd)/buildroot-workspace:/home/builder -w /home/builder ubuntu bash
+- This code starts a fresh Ubuntu Linux container
+- -v $(pwd)/buildroot-workspace:/home/builder: this links a folder on my Mac to a folder inside the container, so files persist even after the container closes: buildroot-workspace on my Mac and /home/builder inside the Linux container
+- -w /home/builder ubuntu bash: This drops me into a bash shell inside Linux
+- inside container the build dependencies installed, because buildroot needs a fairly long list of standard Linux build tools:   apt-get update && apt-get install -y \
+  build-essential git wget cpio unzip rsync bc python3 libncurses-dev
+- Clone Buildroot itself: git clone https://github.com/buildroot/buildroot.git
+
+
 
 **What went wrong / what I learned**
 
