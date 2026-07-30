@@ -103,6 +103,7 @@ components, pre-packaged). Common mix-up, worth keeping straight for interviews.
 | PID 1 | Process ID 1 (the first process started by the kernel, i.e. init) |
 | RTOS | Real-Time Operating System |
 | rootfs | Root Filesystem |
+| Git / GitHub / GitLab | Git is the free, open-source version-control tool itself; GitHub (owned by Microsoft) and GitLab (an independent public company) are two competing commercial platforms that host Git repositories and add collaboration features on top. |
 
 ## Certifications (seen printed on the board)
 
