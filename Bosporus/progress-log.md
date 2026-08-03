@@ -206,7 +206,16 @@ This will be done inside a Linux container, not directly on my Mac:
 - -w /home/builder ubuntu bash: This drops me into a bash shell inside Linux
 - inside container the build dependencies installed, because buildroot needs a fairly long list of standard Linux build tools:   apt-get update && apt-get install -y \
   build-essential git wget cpio unzip rsync bc python3 libncurses-dev
-- Clone Buildroot itself: git clone https://github.com/buildroot/buildroot.git
+- Clone Buildroot itself: git clone https://github.com/buildroot/buildroot.git: Git clone downloads a complete copy of a Git repository. Buildroot's GitHub repo is Buildroot, it's a large collection of Makefiles, Package recipes, Board-specific defconfigs, Kconfig menu definitions. This pulls the actuak Buildroot source tree
+**Configure**
+- make raspberrypi4_defconfig: This step copies pre-made template configuration file into my project as the active .config. For Pi4 template contain to which CPU architecture, which bootloader, which kernel version, which device tree. .config file is my starting point, pre-filled with all the correct settings for a Raspbeberry Pi4.
+- make menuconfig: This opens a text-bases, keyboard-navigated menu. At the Buildroot configuration menu we add Mosquitto, Python, database(SQLite) and SSH access.We'll add all four:
+  - Navigate to Target packages -> Networking applications -> mosquitto, then with Space select it. Then add also dropbear and openssh as the same way.
+  - Navigate back to Target packages -> Interpreter languages and scripting -> python3
+  - Navigate to Target packages -> Libraries -> Database -> sqlite.
+  - Exit and save with esc,esc. This writes my selections into the .config file.
+**build**
+- make
 
 
 
