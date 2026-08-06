@@ -73,12 +73,13 @@ components, pre-packaged). Common mix-up, worth keeping straight for interviews.
 
 ## Wireless / networking
 
-| Abbreviation | Long name |
+| Abbreviation | Long name | Explanation |
 |---|---|
 | BLE | Bluetooth Low Energy |
 | LAN | Local Area Network |
 | MQTT | Message Queuing Telemetry Transport |
-| SSH | Secure Shell |
+| SSH | Secure Shell | a protocol for a command-line session on a remote machine |
+| SSH server & client| daemon | a background program running on the Pi, listening for incoming connection. Client ist the ssh command on Mac/PC initiating the conntection|
 | SSID | Service Set Identifier (WiFi network name) |
 | WLAN | Wireless Local Area Network |
 
