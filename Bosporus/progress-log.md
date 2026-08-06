@@ -198,29 +198,50 @@ Docker is the environment to build Buildroot image, suche Buildroot requires a L
 - install Docker.dmg into Applications
 - Confirm with "docker run --rm hello-world" -> resulted with "Hello from Docker"
 
-**get the Buildroot source**
+**Get the Buildroot source**
 This will be done inside a Linux container, not directly on my Mac:
 - docker run -it --rm -v $(pwd)/buildroot-workspace:/home/builder -w /home/builder ubuntu bash
 - This code starts a fresh Ubuntu Linux container
-- -v $(pwd)/buildroot-workspace:/home/builder: this links a folder on my Mac to a folder inside the container, so files persist even after the container closes: buildroot-workspace on my Mac and /home/builder inside the Linux container
+- -v $(pwd)/buildroot-workspace:/home/builder: this links a folder on my Mac to a folder inside the container, so files persist even after the container closes: buildroot-workspace on my Mac and /home/builder inside the Linux container. Docker's -v flag creates a **bind mount** a two-way link between **buildroot-workspace** on my Mac's real filesystem and **/home/builder** inside the linux docker container
 - -w /home/builder ubuntu bash: This drops me into a bash shell inside Linux
 - inside container the build dependencies installed, because buildroot needs a fairly long list of standard Linux build tools:   apt-get update && apt-get install -y \
   build-essential git wget cpio unzip rsync bc python3 libncurses-dev
 - Clone Buildroot itself: git clone https://github.com/buildroot/buildroot.git: Git clone downloads a complete copy of a Git repository. Buildroot's GitHub repo is Buildroot, it's a large collection of Makefiles, Package recipes, Board-specific defconfigs, Kconfig menu definitions. This pulls the actuak Buildroot source tree
 **Configure Buildroot**
-- make raspberrypi4_defconfig: This step copies pre-made template configuration file into my project as the active .config. For Pi4 template contain to which CPU architecture, which bootloader, which kernel version, which device tree. .config file is my starting point, pre-filled with all the correct settings for a Raspberry Pi4.
-- make menuconfig: This opens a text-bases, keyboard-navigated menu. At the Buildroot configuration menu we add Mosquitto, Python, database(SQLite) and SSH access. We'll add all four:
+- Run make raspberrypi4_defconfig: This step copies pre-made template configuration file into my project as the active .config. For Pi4 template contain to which CPU architecture, which bootloader, which kernel version, which device tree. .config file is my starting point, pre-filled with all the correct settings for a Raspberry Pi4.
+- Run make menuconfig: This opens a text-bases, keyboard-navigated menu. At the Buildroot configuration menu we add Mosquitto, Python, database(SQLite) and SSH access. We'll add all four:
   - Navigate to Target packages -> Networking applications -> mosquitto, then with Space select it. Then add also dropbear and openssh as the same way.
   - Navigate back to Target packages -> Interpreter languages and scripting -> python3
   - Navigate to Target packages -> Libraries -> Database -> sqlite.
   - Exit and save with esc,esc. This writes my selections into the .config file.
 **build**
-- make
+Run make: took more than 1 hour, downloaded cross-compiling entire toolchain, kernel, bootloader and every package.
+After make run without error inside the container '''ls -lh output/images''' output is a file called sdcard.img, zImage, rootfs.ext4, bcm2711-rpi-4-b.dtb
+- Get the image out of the container and onto Mac: ```docker cp buildroot-builder:/home/builder/buildroot/output/images/sdcard.img ~/bosporus-sdcard.img```. Confirm on Mac ```ls -lh ~/bosporus-sdcard.img```
+- Flash into PI and boot: inser SD card into reader, open Rapverry Pi imager, choose **OS**, then select **Use custom**, then choose **Storage** and select SD card then **write**
+- then check the image with ``ls output/images```.
+- Get it onto Mac ```docker cp buildroot-builder:/home/builder/buildroot/output/images/sdcard.img ~/bosporus-sdcard.img``` and confirm with ```ls -lh ~/bosporus-sdcard.img```.
+- before to flash the image onto Pi how to login? Buildroot image doesnt have SSH and password setup. Check if password setup with ```croot@4dd309d7d210:/home/builder/buildroot# cat output/target/etc/shadow | head -3
+root::::::::
+daemon:*:::::::
+bin:*:::::::
+root@4dd309d7d210:/home/builder/buildroot#```.
+That means root has no password set at all. Dropbear(SSH server) would refuses the login.
+- Set a password with ```make menuconfig -> System configuration -> Root password -> make```
+- Flashing image onto Pi: first insert the sd card into PI then power up.
+- Check if Green LED blinks and RED LED steady. The ```ssh root@bosporus.local or ssh root@<IP address>``` then find out the IP address of PI with ```ping bosporus.local```
+- AT Rooter the IP address found out and repeated ```ssh root@<192.168.1.169```
+
 
 **Flash and boot your custom image**
 
 
 
 **What went wrong / what I learned**
+- while flashing standard Raspberry Pi OS on the Pi connection was refused because ssh server was unreachable. This was solved with boot-partition file trick. Some typos and password-paste gotcha led to connection problems.
+- while running make: error because file command missing. Fixed by ```apt-get install -y file```
+- while running make: error due to Docker Desktopn-on-Mac limitation. Docker Desktop on Mac doesn't talk to  bind-mounted folder directly like real Linux would. It goes through a translation layer, called VirtioFS hat bridges macOS's filesystem to the Linux container. That layer has a known, specific bug. The fix: stop using a bind mount for the build, use a Docker-managed volume instead: ```docker volume create buildroot-vol``` then ```docker run -it --name buildroot-builder -v buildroot-vol:/home/builder -w /home/builder ubuntu:24.04 bash``` and redo the step ```apt-get update && apt-get install -y build-essential git wget cpio unzip rsync bc python3 libncurses-dev file git clone https://github.com/buildroot/buildroot.git cd buildroot make raspberrypi4_defconfig make menuconfig make```
+- By finding the IP adress of PI the response to ping bosporus.local hunging because no WIFI configured, Fix: used wired Ethernet intead. 
+- 
 
 **Result**
