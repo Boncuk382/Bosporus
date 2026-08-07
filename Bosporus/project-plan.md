@@ -14,7 +14,7 @@
 *(Replace the "add date" placeholders with the actual dates you did the work — that's
 useful context for anyone reading the repo, and honestly satisfying to fill in.)*
 
-## Example timeframe (adjust to your available time)
+## Timeframe
 
 - **Week 28**: Phase 0 + 1 (sensor node)
 - **Week 29**: Phase 2 (embedded Linux – typically the most time-consuming part)
