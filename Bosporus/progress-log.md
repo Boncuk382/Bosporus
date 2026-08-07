@@ -45,7 +45,7 @@ Serial monitor output, confirming the sensor is being read correctly:
 
 ---
 
-## *16.07.2026* – Phase 2: Embedded Linux gateway
+## *16.07.2026 – 05.08.2026* – Phase 2: Embedded Linux gateway
 
 ### What I did
 
@@ -99,7 +99,7 @@ connect by IP address directly, using a wired connection, which is more predicta
 
 **SW Setup**
 
-**Step 1: Prove the Pi works with standard Raspberry Pi OS**
+### Step 1: Prove the Pi works with standard Raspberry Pi OS
 
 *Installation and configuration of Raspberry Pi Imager*
 
@@ -118,130 +118,224 @@ following configuration:
 - Powered the Raspberry Pi — RED LED lit solid, GREEN LED blinking (indicating active boot)
 - Attempted to access the Raspberry Pi with `ssh boncuk@bosporus.local`
 
-**Artifacts**
+### Step 2: Configure and build the Buildroot image, flash it onto the Raspberry Pi
 
-`ping bosporus.local` confirmed the Pi is fully up and reachable on my network:
-```
-PING bosporus.local (192.168.1.170): 56 data bytes
-64 bytes from 192.168.1.170: icmp_seq=0 ttl=64 time=10.223 ms
-64 bytes from 192.168.1.170: icmp_seq=1 ttl=64 time=15.288 ms
-64 bytes from 192.168.1.170: icmp_seq=2 ttl=64 time=15.102 ms
-64 bytes from 192.168.1.170: icmp_seq=3 ttl=64 time=16.623 ms
-64 bytes from 192.168.1.170: icmp_seq=4 ttl=64 time=16.508 ms
-64 bytes from 192.168.1.170: icmp_seq=5 ttl=64 time=16.110 ms
-```
-
-First attempt, `ssh boncuk@bosporus.local` → **connection refused**. The problem was
-that the SSH server wasn't reachable. Fixed with the "headless SSH enable" trick:
-`touch /Volumes/bootfs/ssh`, then ejected the boot partition with
-`diskutil eject /Volumes/bootfs`.
-
-Next attempt:
-```
-The authenticity of host 'bosporus.local (2a02:169:1f0:0:2ecf:67ff:fe54:ac07)' can't be established.
-ED25519 key fingerprint is SHA256:xXlo3N5Eoltn/7qn+HR8HrAeZsaEHk4xM359dxpS9m8.
-This key is not known by any other names.
-Are you sure you want to continue connecting (yes/no/[fingerprint])?
-```
-
-Answering `yes` resulted in:
-```
-Warning: Permanently added 'bosporus.local' (ED25519) to the list of known hosts.
-Connection closed by 2a02:169:1f0:0:2ecf:67ff:fe54:ac07 port 22
-```
-
-Next attempt, `ssh boncuk@bosporus.local`, prompted for a password. Entering it succeeded:
-```
-boncuk@bosporus.local's password:
-Linux bosporus 6.18.34+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.18.34-1+rpt1 (2026-06-09) aarch64
-The programs included with the Debian GNU/Linux system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
-permitted by applicable law.
-_____________________________________________________________________
-WARNING! Your environment specifies an invalid locale.
- The unknown environment variables are:
-   LC_CTYPE=UTF-8 LC_ALL=
- This can affect your user experience significantly, including the
- ability to manage packages. You may install the locales by running:
- sudo dpkg-reconfigure locales
- and select the missing language. Alternatively, you can install the
- locales-all package:
- sudo apt-get install locales-all
-To disable this message for all users, run:
-   sudo touch /var/lib/cloud/instance/locale-check.skip
-_____________________________________________________________________
--bash: warning: setlocale: LC_CTYPE: cannot change locale (UTF-8): No such file or directory
-```
-
-Updating the Pi with `sudo apt-get update` and `sudo apt-get install -y locales-all`
-did not remove the warning — turned out `locales-all` was already installed, so the
-actual cause was a malformed locale variable (`LC_CTYPE=UTF-8`) being sent by my own
-Mac's terminal, not anything missing on the Pi:
-```
-Reading package lists... Done
-Building dependency tree... Done
-Reading state information... Done
-locales-all is already the newest version (2.41-12+rpt1+deb13u3).
-0 upgraded, 0 newly installed, 0 to remove and 56 not upgraded.
-boncuk@bosporus:~ $
-```
-**Step 2: Configure and build the Buildroot image, flash it onto the Raspberry Pi**
-What's next:
-Docker Desktop -> Buildroot source -> configure -> build -> flash -> boot your own image. 
+Plan: Docker Desktop → Buildroot source → configure → build → flash → boot my own image.
 
 **Installing Docker Desktop**
-Docker is the environment to build Buildroot image, suche Buildroot requires a Linux machine and my Mac isnt one. Docker desktop works by running a small Linux virtual machine in the background. Docker is just a convenient way to get a Linux computer on Mac.Professional embedded workflow run on actual Linux machines. Building Linux images belongs on Linux: Docker-on-Mac is a practical personal-development bridge to get there without owning a Linux machine, not a professional release process. 
 
-- installed docker desktop from docker.com/products/docker-desktop -> "Download for Mac -Apple Silicon"
-- install Docker.dmg into Applications
-- Confirm with "docker run --rm hello-world" -> resulted with "Hello from Docker"
+Docker is the environment used to build the Buildroot image, since Buildroot requires
+a Linux machine and my Mac isn't one. Docker Desktop works by running a small Linux
+virtual machine in the background — it's just a convenient way to get a Linux computer
+on my Mac. Professional embedded workflows run on actual Linux machines; building
+Linux images belongs on Linux. Docker-on-Mac is a practical personal-development
+bridge to get there without owning a Linux machine, not a professional release process.
+
+- Installed Docker Desktop from docker.com/products/docker-desktop → "Download for Mac – Apple Silicon"
+- Installed `Docker.dmg` into Applications
+- Confirmed with `docker run --rm hello-world` → resulted in "Hello from Docker!"
 
 **Get the Buildroot source**
-This will be done inside a Linux container, not directly on my Mac:
-- docker run -it --rm -v $(pwd)/buildroot-workspace:/home/builder -w /home/builder ubuntu bash
-- This code starts a fresh Ubuntu Linux container
-- -v $(pwd)/buildroot-workspace:/home/builder: this links a folder on my Mac to a folder inside the container, so files persist even after the container closes: buildroot-workspace on my Mac and /home/builder inside the Linux container. Docker's -v flag creates a **bind mount** a two-way link between **buildroot-workspace** on my Mac's real filesystem and **/home/builder** inside the linux docker container
-- -w /home/builder ubuntu bash: This drops me into a bash shell inside Linux
-- inside container the build dependencies installed, because buildroot needs a fairly long list of standard Linux build tools:   apt-get update && apt-get install -y \
-  build-essential git wget cpio unzip rsync bc python3 libncurses-dev
-- Clone Buildroot itself: git clone https://github.com/buildroot/buildroot.git: Git clone downloads a complete copy of a Git repository. Buildroot's GitHub repo is Buildroot, it's a large collection of Makefiles, Package recipes, Board-specific defconfigs, Kconfig menu definitions. This pulls the actuak Buildroot source tree
+
+This is done inside a Linux container, not directly on my Mac:
+
+```bash
+docker run -it --rm -v $(pwd)/buildroot-workspace:/home/builder -w /home/builder ubuntu bash
+```
+- Starts a fresh Ubuntu Linux container
+- `-v $(pwd)/buildroot-workspace:/home/builder` creates a **bind mount** — a two-way
+  link between `buildroot-workspace` on my Mac's real filesystem and `/home/builder`
+  inside the Linux container, so files persist even after the container closes
+- `-w /home/builder` drops me into a bash shell inside Linux, in that directory
+
+Installed the build dependencies, since Buildroot needs a fairly long list of standard
+Linux build tools:
+```bash
+apt-get update && apt-get install -y build-essential git wget cpio unzip rsync bc python3 libncurses-dev
+```
+
+Cloned Buildroot itself:
+```bash
+git clone https://github.com/buildroot/buildroot.git
+```
+`git clone` downloads a complete copy of a Git repository. Buildroot's GitHub repo *is*
+Buildroot — a large collection of Makefiles, package recipes, board-specific
+defconfigs, and Kconfig menu definitions. This pulled the actual Buildroot source tree.
+(Note: this GitHub repo is a read-only mirror — Buildroot's actual development happens
+on GitLab, via a mailing-list patch review process, not GitHub pull requests.)
+
 **Configure Buildroot**
-- Run make raspberrypi4_defconfig: This step copies pre-made template configuration file into my project as the active .config. For Pi4 template contain to which CPU architecture, which bootloader, which kernel version, which device tree. .config file is my starting point, pre-filled with all the correct settings for a Raspberry Pi4.
-- Run make menuconfig: This opens a text-bases, keyboard-navigated menu. At the Buildroot configuration menu we add Mosquitto, Python, database(SQLite) and SSH access. We'll add all four:
-  - Navigate to Target packages -> Networking applications -> mosquitto, then with Space select it. Then add also dropbear and openssh as the same way.
-  - Navigate back to Target packages -> Interpreter languages and scripting -> python3
-  - Navigate to Target packages -> Libraries -> Database -> sqlite.
-  - Exit and save with esc,esc. This writes my selections into the .config file.
-**build**
-Run make: took more than 1 hour, downloaded cross-compiling entire toolchain, kernel, bootloader and every package.
-After make run without error inside the container '''ls -lh output/images''' output is a file called sdcard.img, zImage, rootfs.ext4, bcm2711-rpi-4-b.dtb
-- Get the image out of the container and onto Mac: ```docker cp buildroot-builder:/home/builder/buildroot/output/images/sdcard.img ~/bosporus-sdcard.img```. Confirm on Mac ```ls -lh ~/bosporus-sdcard.img```
-- Flash into PI and boot: inser SD card into reader, open Rapverry Pi imager, choose **OS**, then select **Use custom**, then choose **Storage** and select SD card then **write**
-- then check the image with ``ls output/images```.
-- Get it onto Mac ```docker cp buildroot-builder:/home/builder/buildroot/output/images/sdcard.img ~/bosporus-sdcard.img``` and confirm with ```ls -lh ~/bosporus-sdcard.img```.
-- before to flash the image onto Pi how to login? Buildroot image doesnt have SSH and password setup. Check if password setup with ```croot@4dd309d7d210:/home/builder/buildroot# cat output/target/etc/shadow | head -3
+- `make raspberrypi4_defconfig` — copies a pre-made template configuration into the
+  project as the active `.config`. For the Pi 4, this template already contains the
+  correct CPU architecture, bootloader, kernel version, and device tree — my starting
+  point, pre-filled with sensible settings for this exact board.
+- `make menuconfig` — opens a text-based, keyboard-navigated menu. Added the four
+  packages the gateway needs on top of the baseline: Mosquitto, Dropbear + OpenSSH,
+  Python3, and SQLite.
+  - Target packages → Networking applications → `mosquitto`, `dropbear`, `openssh` (Space to select each)
+  - Target packages → Interpreter languages and scripting → `python3`
+  - Target packages → Libraries → Database → `sqlite`
+  - Exit and save (Esc, Esc) — writes the selections into `.config`
+
+**Build**
+
+Ran `make` — first attempt failed almost immediately:
+```
+You must install '/usr/bin/file' on your build machine
+```
+Fixed with `apt-get install -y file`, then reran `make`.
+
+Second attempt got much further (downloading and cross-compiling the toolchain,
+kernel, bootloader, and every selected package — over an hour of work), then failed
+differently:
+```
+chmod: changing permissions of '.../host-m4-1.4.21/bootstrap': Permission denied
+```
+This is a known Docker Desktop-on-Mac limitation: Docker doesn't talk to a bind-mounted
+folder directly the way real Linux would. It goes through a translation layer called
+**VirtioFS** that bridges macOS's filesystem to the Linux container, and that layer has
+a specific bug where files extracted with certain permission bits can't be `chmod`'d
+afterward — even as root. Buildroot does this exact "extract, then chmod" pattern for
+every package, so this was going to keep recurring.
+
+**Fix:** stopped using a bind mount, switched to a Docker-managed **named volume**
+instead (which doesn't go through that same host-translation layer):
+```bash
+docker volume create buildroot-vol
+docker run -it --name buildroot-builder -v buildroot-vol:/home/builder -w /home/builder ubuntu:24.04 bash
+```
+Redid the setup in this fresh container (dependencies, clone, defconfig, menuconfig
+with the same four packages), then ran `make` again — completed successfully this time.
+
+Confirmed the build output:
+```bash
+ls -lh output/images/
+```
+→ `sdcard.img` (153M), `zImage`, `rootfs.ext2`/`rootfs.ext4`, four `bcm2711-*.dtb`
+variants, `boot.vfat`, `genimage.cfg` — every piece Buildroot is supposed to produce.
+
+**Checking login before flashing — this saved me from being locked out**
+
+Since a named volume isn't directly browsable from Finder, getting the file onto my
+Mac needs an explicit copy step:
+```bash
+docker cp buildroot-builder:/home/builder/buildroot/output/images/sdcard.img ~/bosporus-sdcard.img
+```
+(First attempt at this failed with `bash: docker: command not found` — I'd
+accidentally run it *inside* the container. `docker` is a Mac-side command; it manages
+containers from the outside, so this has to run from a normal Mac terminal, not from
+within the container itself.)
+
+Before flashing, checked whether login would even be possible:
+```bash
+cat output/target/etc/shadow | head -3
+```
+```
 root::::::::
 daemon:*:::::::
 bin:*:::::::
-root@4dd309d7d210:/home/builder/buildroot#```.
-That means root has no password set at all. Dropbear(SSH server) would refuses the login.
-- Set a password with ```make menuconfig -> System configuration -> Root password -> make```
-- Flashing image onto Pi: first insert the sd card into PI then power up.
-- Check if Green LED blinks and RED LED steady. The ```ssh root@bosporus.local or ssh root@<IP address>``` then find out the IP address of PI with ```ping bosporus.local```
-- AT Rooter the IP address found out and repeated ```ssh root@<192.168.1.169```
+```
+The empty second field on `root` confirmed no password was set at all. Dropbear (the
+SSH server) specifically refuses network login with a blank password even though the
+account itself has none — so flashing as-is would have locked me out with no serial
+console as a fallback. Fixed via:
+```
+make menuconfig → System configuration → Root password → make
+```
 
+**Flashing and first boot of the custom image**
+- Got the updated image onto my Mac with `docker cp` (run correctly this time, from a
+  normal Mac terminal) and confirmed with `ls -lh ~/bosporus-sdcard.img`
+- Raspberry Pi Imager → Choose OS → scrolled to the bottom → **"Use custom"** →
+  selected `~/bosporus-sdcard.img`
+- Choose Storage → SD card → Write
+- Inserted the SD card into the Pi, then powered it on
+- LEDs: RED solid, GREEN blinking every 3–4 seconds — a slow, regular "heartbeat"
+  pattern, different from the rapid flickering seen during standard-OS boot, suggesting
+  the kernel had fully booted (heartbeat LED only activates once Linux is running)
 
-**Flash and boot your custom image**
+**Connecting — the actual troubleshooting stretch**
 
+`ssh root@bosporus.local` hung indefinitely. Diagnosed as: the custom image has no
+WiFi configured at all — unlike Raspberry Pi Imager, `menuconfig` never asks for WiFi
+credentials, and I never added `wpa_supplicant` or any WiFi firmware package. The Pi
+had booted but never joined the network.
 
+First fix attempt: connected the Pi directly to my Mac via the Ethernet adapter —
+still no connection. Cause: no DHCP server in a direct Pi-to-Mac link (a router
+normally provides DHCP; my Mac doesn't). **Actual fix:** connected the Pi's Ethernet
+port to the router instead, which got it a real IP via DHCP: `192.168.1.169`.
+
+```bash
+ssh root@192.168.1.169
+```
+connected and prompted for a password — entering the password I'd set (`bosporus74`)
+resulted in `Connection closed by 192.168.1.169 port 22`. Retyped manually (not pasted)
+— got `Permission denied, please try again` three times in a row.
+
+Debugged systematically rather than continuing to guess:
+- `grep ROOT_PASSWD .config` → confirmed `bosporus74` was genuinely saved
+- `cat output/target/etc/shadow | head -1` → confirmed a real password hash existed
+- `cat output/target/etc/init.d/S50dropbear` → checked for a `-w` flag (which would
+  disable root login entirely, regardless of password) — confirmed absent
+
+Reset to a deliberately simple password (`test1234`) to rule out a typing/Caps-Lock
+issue, rebuilt, re-copied, reflashed. Still got "Permission denied." Checked
+`ls -lh ~/bosporus-sdcard.img` — confirmed the image file itself was genuinely fresh.
+
+Noticed the Pi's IP address hadn't changed across reflashes, and initially treated that
+as suspicious — but the IP is assigned by the router based on the Pi's **MAC address**,
+not its software, so an unchanged IP proves nothing about which image is actually
+running.
+
+Final `ssh root@192.168.1.169` attempt triggered:
+```
+WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
+```
+Correctly recognized this as **expected**, not an attack: a fresh filesystem generates
+fresh SSH host keys, so this was actual proof the newest image was finally running.
+Cleared the stale entry with `ssh-keygen -R 192.168.1.169`, reconnected, accepted the
+new host key, entered `test1234` —
+
+**successful login to my own custom-built Buildroot Linux system.**
+
+**Artifacts**
+
+![Custom Buildroot image build output](images/buildroot-output-images.png)
+
+![Successful SSH login to custom image](images/buildroot-ssh-login.png)
 
 **What went wrong / what I learned**
-- while flashing standard Raspberry Pi OS on the Pi connection was refused because ssh server was unreachable. This was solved with boot-partition file trick. Some typos and password-paste gotcha led to connection problems.
-- while running make: error because file command missing. Fixed by ```apt-get install -y file```
-- while running make: error due to Docker Desktopn-on-Mac limitation. Docker Desktop on Mac doesn't talk to  bind-mounted folder directly like real Linux would. It goes through a translation layer, called VirtioFS hat bridges macOS's filesystem to the Linux container. That layer has a known, specific bug. The fix: stop using a bind mount for the build, use a Docker-managed volume instead: ```docker volume create buildroot-vol``` then ```docker run -it --name buildroot-builder -v buildroot-vol:/home/builder -w /home/builder ubuntu:24.04 bash``` and redo the step ```apt-get update && apt-get install -y build-essential git wget cpio unzip rsync bc python3 libncurses-dev file git clone https://github.com/buildroot/buildroot.git cd buildroot make raspberrypi4_defconfig make menuconfig make```
-- By finding the IP adress of PI the response to ping bosporus.local hunging because no WIFI configured, Fix: used wired Ethernet intead. 
-- 
+
+- While flashing the standard Raspberry Pi OS: SSH was refused because the server
+  wasn't reachable — fixed with the boot-partition `touch .../ssh` trick. A password
+  paste attempt also caused a silent connection failure; typing manually resolved it.
+- `make` failed first on a missing `file` package — fixed with `apt-get install -y file`.
+- `make` failed a second time on `chmod: Permission denied` during package extraction —
+  a known Docker Desktop-on-Mac VirtioFS bind-mount bug. Fixed by switching from a bind
+  mount to a Docker-managed named volume.
+- `docker cp` doesn't run inside a container — it's a Mac-side command for moving files
+  across the container boundary, and has to run from a normal Mac terminal.
+- A blank root password blocks SSH login entirely (Dropbear refuses blank-password
+  logins over the network), even though the same account would work fine on a local
+  console — worth checking `/etc/shadow` **before** flashing, not after being locked out.
+- Buildroot's `menuconfig` has no WiFi setup step — unlike Raspberry Pi Imager, WiFi
+  has to be deliberately configured, or wired Ethernet has to be used instead.
+- A direct Ethernet cable between two devices doesn't give either one an IP address
+  without a DHCP server somewhere in the loop (normally the router's job).
+- An SD card's IP address is tied to the Pi's hardware (MAC address), not to whatever
+  OS/image happens to be on the card — it does not change across reflashes, and is not
+  evidence of which image is currently running.
+- A "REMOTE HOST IDENTIFICATION HAS CHANGED" SSH warning isn't automatically suspicious
+  — a freshly flashed system genuinely does generate new host keys, and `ssh-keygen -R`
+  is the correct, safe way to clear the outdated entry once you know why it changed.
 
 **Result**
+
+✅ Custom Buildroot image built from source and successfully booted on the Raspberry Pi 4,
+with SSH access confirmed via a manually set root password — the core Phase 2
+milestone from the project plan: *"Custom Linux image boots on the Pi."*
+
+⏳ Still to do: verify the selected packages are actually present and working
+(`uname -a`, `cat /etc/os-release`, `which mosquitto`, `which python3`, `which sqlite3`)
+before considering this phase fully closed.
