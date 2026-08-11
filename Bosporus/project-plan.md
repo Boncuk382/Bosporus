@@ -6,7 +6,7 @@
 |-------|----------------------------------|--------------------------------------------------------------------------|-------------------------------------------------|--------|------|-------------|
 | 0     | Preparation                     | Order hardware, set up development environment                          | PlatformIO + toolchain working                 | ✅ Done | 07.07.2026 | 13.07.2026 |
 | 1     | Sensor node                     | Program the ESP32, read the sensor, set up MQTT connection              | Sensor sends readings                          | ✅ Done (Serial; MQTT publish still open) | 10.07.2026| 13.07.2026
-| 2     | Embedded Linux gateway          | Configure and build the Buildroot image, flash it onto the Raspberry Pi | Custom Linux image boots on the Pi             | ✅ Done | 16.07.2026 | 16.07.2026
+| 2     | Embedded Linux gateway          | Configure and build the Buildroot image, flash it onto the Raspberry Pi | Custom Linux image boots on the Pi             | ✅ Done | 16.07.2026 | 11.08.2026
 | 3     | Integration                     | Set up MQTT broker + processing script + database on the gateway         | Readings are stored persistently                | ⏳ Not started | — |
 | 4     | Visualization                   | Connect Grafana/dashboard                                                | Live history of readings visible                | ⏳ Not started | — |
 | 5     | Documentation & portfolio       | Finalize docs, clean up GitHub repo, optionally write a short write-up   | Presentable project for job applications         | 🔄 Ongoing | — |
@@ -16,11 +16,11 @@ useful context for anyone reading the repo, and honestly satisfying to fill in.)
 
 ## Timeframe
 
-- **Week 28**: Phase 0 + 1 (sensor node)
-- **Week 29**: Phase 2 (embedded Linux – typically the most time-consuming part)
-- **Week 30**: Phase 3 (integration)
-- **Week 30**: Phase 4 (dashboard)
-- **Week 30**: Phase 5 (docs & polish)
+- **Week 28**: Phase 0 + 1 (sensor node) + doc
+- **Week 29**: Phase 2 (embedded Linux – typically the most time-consuming part) + doc
+- **Week 33**: Phase 3 (integration) + doc
+- **Week 33**: Phase 4 (dashboard) + doc
+
 
 ## Definition of done per phase
 
