@@ -381,18 +381,54 @@ grep -E '^(listener | allow_anonymous)' /etc/mosquitto/mosquitto.conf
 results with empty means no active **listener** and **allow_anonymous** line exists anywhere in the config file.
 **add a listener**
 The existing config file is entirely comments and defaults. The cleanest approach is a small separate config file rather than editing this large one. 
+
+Restart mosquitto so it picks up the new config
 ```
-mkdir -p /etc/mosquitto/conf.d
-cat > /etc/mosquitto/conf.d/bosporus.conf << 'EOF'
+# ps | grep mosquitto
+  383 nobody   mosquitto -d -c /etc/mosquitto/mosquitto.conf
+  390 root     grep mosquitto
+# kill 383
+# mosquitto -d -c /etc/mosquitto/conf.d/bosporus.conf
+19497: Warning: Unable to drop privileges to 'mosquitto' because this user does not exist. Trying 'nobody' instead.
+19497: Info: running mosquitto as user: nobody.
+# netstat -tuln | grep 1883
+tcp        0      0 0.0.0.0:1883            0.0.0.0:*               LISTEN      
+#
+```
+The result 0.0.0.0:1883 confirms Mosquitto listening on all network interfaces, reachable from other devices on my network, including ESP32. 
+
+Quick test from mac. For this intalling MQTT command-line tools.
+```
+brew install mosquitto
+```
+Then, in one Mac terminal subscribe to a test topic. In a second Mac terminal tab, publish a message
+```
+mosquitto_sub -h 192.168.1.169 -t test/topic -v
+mosquitto_pub -h 192.168.1.169 -t test/topic -m "hello from my mac"
+```
+results in the subscribe terminal with **test/topic hello from my mac**. This is the proof the broker reachable over the newtwork. 
+**Testing that this config load automatically on boot**
+I did this:
+```
+cat >> /etc/mosquitto/mosquitto.conf << 'EOF'
+
 listener 1883 0.0.0.0
 allow_anonymous true
 EOF
-```
-Then restart mosquitto so it picks up the new config
-```
-kill 176
+ps | grep mosquitto
+kill <that PID>
 mosquitto -d -c /etc/mosquitto/mosquitto.conf
+netstat -tuln | grep 1883
 ```
+This show ```0.0.0.0:1883```. I did then real test with reboot. 
+```
+reboot
+ps | grep mosquitto
+netstat -tuln | grep 1883
+```This result as ``` cp 0 0 0.0.0.0:1883 0.0.0.0:* LISTEN   ```. This confirm that Mosquitto came up automatically and its bpund to 0.0.0.0:1883. That means the config change is saved on the SD card and correctly wired into the boot sequence. 
+
+
+
 
 **Test it from your Mac using a simple command-line MQTT client**
 
