@@ -355,11 +355,11 @@ Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linu
 # 
 ```
 ## *11.08.2026 – * – Phase 3: Integration
-**Start Mosquitto on the Pi, confirm it's actually listening on the network**
-Mosquitto is one specific piece of SW that implements the protocol MQTT (Message Queuing Telemetry Transport). It is a lightweight and suitable for use on from low power single board computers to full servers, sending small messages. 
-```
-mosquitto -v &
 
+**Start Mosquitto on the Pi, confirm it's actually listening on the network**
+
+Mosquitto is one specific piece of SW that implements the protocol MQTT (Message Queuing Telemetry Transport). It is a lightweight and suitable for use on from low power single board computers to full servers, sending small messages. 
+```mosquitto -v &
 ```, mosquitto is already running, check that
 ```
 ps | grep mosquitto
