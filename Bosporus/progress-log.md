@@ -354,3 +354,29 @@ Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linu
 Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linux
 # 
 ```
+## *11.08.2026 – * – Phase 3: Integration
+**Start Mosquitto on the Pi, confirm it's actually listening on the network**
+Mosquitto is one specific piece of SW that implements the protocol MQTT (Message Queuing Telemetry Transport). It is a lightweight and suitable for use on from low power single board computers to full servers, sending small messages. 
+```
+mosquitto -v &
+
+```, mosquitto is already running, check that
+```
+ps | grep mosquitto
+
+``` results as
+```
+176 nobody   /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
+
+```. check what its real config allows
+```
+cat /etc/mosquitto/mosquitto.conf
+
+```
+
+**Test it from your Mac using a simple command-line MQTT client**
+
+**Update the ESP32 firmware to connect to WiFi and publish real sensor readings via MQTT**
+**Write the gateway-side Python script that subscribes and writes readings into SQLite**
+
+
