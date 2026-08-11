@@ -336,6 +336,21 @@ new host key, entered `test1234` —
 with SSH access confirmed via a manually set root password — the core Phase 2
 milestone from the project plan: *"Custom Linux image boots on the Pi."*
 
-⏳ Still to do: verify the selected packages are actually present and working
-(`uname -a`, `cat /etc/os-release`, `which mosquitto`, `which python3`, `which sqlite3`)
-before considering this phase fully closed.
+✅ Verification the selected packages that are actually present and working
+- run uname -a: prints out the kernel name, kernel release version, hostname, build date/time, CPU architecture and operating system family.
+- which mosquitto, python 3, sqlite3: where exactly on disk is the program execute.
+```
+(base) adablackjack@Adas-MacBook-Air ~ % ssh root@192.168.1.169
+root@192.168.1.169's password: 
+# uname -a
+Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linux
+# which mosquitto
+/usr/sbin/mosquitto
+# which python3
+/usr/bin/python3
+# which sqlite3
+/usr/bin/sqlite3
+# uname -a
+Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linux
+# 
+```
