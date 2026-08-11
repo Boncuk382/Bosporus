@@ -374,6 +374,25 @@ Then, check what its real config allows
 ```
 cat /etc/mosquitto/mosquitto.conf
 ```
+I were specificall looking for whether **listener** line and **allow_anonymous** is set, which tell us whether mosquitto accepts connections from ESP32 and whether I need to edit this file and restart the service. 
+```
+grep -E '^(listener | allow_anonymous)' /etc/mosquitto/mosquitto.conf
+```
+results with empty means no active **listener** and **allow_anonymous** line exists anywhere in the config file.
+**add a listener**
+The existing config file is entirely comments and defaults. The cleanest approach is a small separate config file rather than editing this large one. 
+```
+mkdir -p /etc/mosquitto/conf.d
+cat > /etc/mosquitto/conf.d/bosporus.conf << 'EOF'
+listener 1883 0.0.0.0
+allow_anonymous true
+EOF
+```
+Then restart mosquitto so it picks up the new config
+```
+kill 176
+mosquitto -d -c /etc/mosquitto/mosquitto.conf
+```
 
 **Test it from your Mac using a simple command-line MQTT client**
 
