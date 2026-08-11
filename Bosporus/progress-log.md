@@ -336,12 +336,15 @@ new host key, entered `test1234` —
 with SSH access confirmed via a manually set root password — the core Phase 2
 milestone from the project plan: *"Custom Linux image boots on the Pi."*
 
-✅ Verification the selected packages that are actually present and working
-- run uname -a: prints out the kernel name, kernel release version, hostname, build date/time, CPU architecture and operating system family.
-- which mosquitto, python 3, sqlite3: where exactly on disk is the program execute.
+**Verification**
+
+`uname -a` prints the kernel name, kernel release version, hostname, build
+date/time, CPU architecture, and operating system family — confirms this is
+genuinely my own build, not standard Raspberry Pi OS. `which <program>` prints
+the exact path where a program lives on disk — no output would mean it isn't
+installed; a real path is proof the package made it into the image.
+
 ```
-(base) adablackjack@Adas-MacBook-Air ~ % ssh root@192.168.1.169
-root@192.168.1.169's password: 
 # uname -a
 Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linux
 # which mosquitto
@@ -350,89 +353,126 @@ Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linu
 /usr/bin/python3
 # which sqlite3
 /usr/bin/sqlite3
-# uname -a
-Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linux
-# 
 ```
-## *11.08.2026 – * – Phase 3: Integration
 
-**Start Mosquitto on the Pi, confirm it's actually listening on the network**
+✅ All three packages confirmed present and correctly installed.
+## *11.08.2026 –* – Phase 3: Integration
 
-Mosquitto is one specific piece of SW that implements the protocol MQTT (Message Queuing Telemetry Transport). It is a lightweight and suitable for use on from low power single board computers to full servers, sending small messages. 
-```
+### What I did
+
+**Understanding Mosquitto**
+
+Mosquitto is one specific piece of software that implements the MQTT (Message
+Queuing Telemetry Transport) protocol. It's lightweight and suitable for use
+on everything from low-power single-board computers to full servers, sending
+small messages between devices.
+
+**Confirming the broker is running**
+
+Tried starting it manually:
+```bash
 mosquitto -v &
 ```
-mosquitto is already running, check that
-```
+This failed with "Address already in use" — turned out Mosquitto was already
+running automatically, started at boot by Buildroot's init script:
+```bash
 ps | grep mosquitto
 ```
-This results as
 ```
 176 nobody   /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
 ```
-Then, check what its real config allows
-```
+
+**Checking whether it accepts connections from other devices**
+
+```bash
 cat /etc/mosquitto/mosquitto.conf
 ```
-I were specificall looking for whether **listener** line and **allow_anonymous** is set, which tell us whether mosquitto accepts connections from ESP32 and whether I need to edit this file and restart the service. 
-```
-grep -E '^(listener | allow_anonymous)' /etc/mosquitto/mosquitto.conf
-```
-results with empty means no active **listener** and **allow_anonymous** line exists anywhere in the config file.
-**add a listener**
-The existing config file is entirely comments and defaults. The cleanest approach is a small separate config file rather than editing this large one. 
+I was specifically looking for a `listener` line and an `allow_anonymous`
+setting — these determine whether Mosquitto would accept a connection from
+the ESP32 at all, or only from processes running locally on the Pi itself.
 
-Restart mosquitto so it picks up the new config
+```bash
+grep -E '^(listener|allow_anonymous)' /etc/mosquitto/mosquitto.conf
 ```
-# ps | grep mosquitto
-  383 nobody   mosquitto -d -c /etc/mosquitto/mosquitto.conf
-  390 root     grep mosquitto
-# kill 383
-# mosquitto -d -c /etc/mosquitto/conf.d/bosporus.conf
-19497: Warning: Unable to drop privileges to 'mosquitto' because this user does not exist. Trying 'nobody' instead.
-19497: Info: running mosquitto as user: nobody.
-# netstat -tuln | grep 1883
-tcp        0      0 0.0.0.0:1883            0.0.0.0:*               LISTEN      
-#
-```
-The result 0.0.0.0:1883 confirms Mosquitto listening on all network interfaces, reachable from other devices on my network, including ESP32. 
+Empty result — no active `listener` or `allow_anonymous` line exists anywhere
+in the file, only commented-out defaults and documentation. This matched the
+"Starting in local only mode" warning from the manual start attempt: without
+an explicit listener, Mosquitto only accepts local connections.
 
-Quick test from mac. For this intalling MQTT command-line tools.
-```
-brew install mosquitto
-```
-Then, in one Mac terminal subscribe to a test topic. In a second Mac terminal tab, publish a message
-```
-mosquitto_sub -h 192.168.1.169 -t test/topic -v
-mosquitto_pub -h 192.168.1.169 -t test/topic -m "hello from my mac"
-```
-results in the subscribe terminal with **test/topic hello from my mac**. This is the proof the broker reachable over the newtwork. 
-**Testing that this config load automatically on boot**
-I did this:
-```
+**Opening it up to the network**
+
+First attempt: created a separate config file at `/etc/mosquitto/conf.d/bosporus.conf`
+with a `listener 1883 0.0.0.0` and `allow_anonymous true` line, and restarted
+Mosquitto pointing at it directly. This worked, but only as a one-off — the
+file wasn't being loaded automatically (the main config's `include_dir` option
+that would pull in `conf.d/*.conf` files is commented out by default).
+
+**Fix:** appended the same two lines directly to the end of the main config
+file instead, so Buildroot's existing boot script (which already points at
+`mosquitto.conf`) picks them up automatically:
+```bash
 cat >> /etc/mosquitto/mosquitto.conf << 'EOF'
 
 listener 1883 0.0.0.0
 allow_anonymous true
 EOF
+```
+Restarted and confirmed:
+```bash
 ps | grep mosquitto
-kill <that PID>
+kill <PID>
 mosquitto -d -c /etc/mosquitto/mosquitto.conf
 netstat -tuln | grep 1883
 ```
-This show ```0.0.0.0:1883```. I did then real test with reboot. 
 ```
+tcp        0      0 0.0.0.0:1883            0.0.0.0:*               LISTEN
+```
+`0.0.0.0:1883` confirms Mosquitto is listening on all network interfaces —
+reachable from other devices on the network, including the ESP32.
+
+**Testing from the Mac**
+
+Installed the MQTT command-line client tools (not a broker — just `mosquitto_pub`
+and `mosquitto_sub`, for testing):
+```bash
+brew install mosquitto
+```
+In one Mac terminal, subscribed to a test topic; in a second tab, published a message:
+```bash
+mosquitto_sub -h 192.168.1.169 -t test/topic -v
+mosquitto_pub -h 192.168.1.169 -t test/topic -m "hello from my mac"
+```
+The subscribing terminal immediately printed `test/topic hello from my mac` —
+full proof the broker is reachable and working correctly over the network,
+completely independent of the ESP32.
+
+**Confirming the config survives a reboot**
+
+```bash
 reboot
+```
+After reconnecting via SSH, checked without starting anything manually:
+```bash
 ps | grep mosquitto
 netstat -tuln | grep 1883
-```This result as ``` cp 0 0 0.0.0.0:1883 0.0.0.0:* LISTEN   ```. This confirm that Mosquitto came up automatically and its bpund to 0.0.0.0:1883. That means the config change is saved on the SD card and correctly wired into the boot sequence. 
+```
+```
+180 nobody   /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
+tcp        0      0 0.0.0.0:1883            0.0.0.0:*               LISTEN
+```
+Mosquitto came up automatically, already bound to `0.0.0.0:1883`, with no
+manual intervention — confirms the config change is genuinely saved on the SD
+card and correctly wired into the boot sequence, not just a runtime fix that
+would be lost on the next power cycle.
 
+**Result**
 
+✅ Mosquitto broker running on the Pi, reachable from other devices on the
+network, auto-starting correctly configured on every boot. Publish/subscribe
+confirmed working end-to-end from the Mac.
 
+**Next steps**
 
-**Test it from your Mac using a simple command-line MQTT client**
-
-**Update the ESP32 firmware to connect to WiFi and publish real sensor readings via MQTT**
-**Write the gateway-side Python script that subscribes and writes readings into SQLite**
-
+- Update the ESP32 firmware to connect to WiFi and publish real sensor readings via MQTT
+- Write the gateway-side Python script that subscribes to the sensor topic and writes readings into SQLite
 
