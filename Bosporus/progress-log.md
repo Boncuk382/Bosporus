@@ -480,16 +480,21 @@ confirmed working end-to-end from the Mac.
 - Creation of secret.h file in include, which contains WIFI_SSID and WIFI_PASSWORD.
 ```#pragma once
 #define WIFI_SSID "wlan_name"
-#define WIFI_PASSWORD "wlan_passwort"```
+#define WIFI_PASSWORD "wlan_passwort" ```
 
-- This file is added to .gitignore. ```.pio
+- This file is added to .gitignore.
+
+```.pio
 .vscode/.browse.c_cpp.db*
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
 .include/secrets.h```
+
 This way, the file exists on my machine and compiles fine locally. But, Git will never track or upload it. 
-- Adding MQTT library to platformio.ini ```lib_deps =
+- Adding MQTT library to platformio.ini
+
+```lib_deps =
     adafruit/DHT sensor library@^1.4.6
     adafruit/Adafruit Unified Sensor@^1.1.14
     knolleary/PubSubClient@^2.8
@@ -499,7 +504,7 @@ This way, the file exists on my machine and compiles fine locally. But, Git will
 ```#include <Arduino.h>
 #include <DHT.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <PubSubClient.h> // MQTT client library publishes readings to Pi's Mosquitto broker
 #include "secrets.h"
 
 #define DHTPIN 2
@@ -569,4 +574,36 @@ void loop() {
   Serial.println(payload);
   mqttClient.publish(MQTT_TOPIC, payload);
 }```
+- Compiled new code in main.cpp and got this:
+```
+--Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+.......................................................................
+```
+This confirms that the board connected, detected and running the new firmware. The dots pattern is connectWiFi() function's Serial.print(".") loop, which only appears in the new code. But, it stuck at the WiFi connection stage and never getting past it.
+**Debugging**
+- Checked the Wifi name and password -> correct. 
+- Checking WiFi broadcasting Frequency because ESP32 support only 2.4 Ghz. I have first did a test with my iPhone hotspot. I have also added diagnostics instead of dots.
+```
+void connectWiFi() {
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(500);
+    Serial.print("status=");
+    Serial.println(WiFi.status());
+    attempts++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("WiFi connected, IP address: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("WiFi connection FAILED after 20 attempts.");
+  }
+}```
