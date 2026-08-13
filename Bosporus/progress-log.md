@@ -586,8 +586,8 @@ This confirms that the board connected, detected and running the new firmware. T
 **Debugging**
 - Checked the Wifi name and password -> correct. 
 - Checking WiFi broadcasting Frequency because ESP32 support only 2.4 Ghz. I have first did a test with my iPhone hotspot. I have also added diagnostics instead of dots.
-```
-void connectWiFi() {
+
+```void connectWiFi() {
   Serial.print("Connecting to WiFi: ");
   Serial.println(WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -606,4 +606,5 @@ void connectWiFi() {
   } else {
     Serial.println("WiFi connection FAILED after 20 attempts.");
   }
-}```
+}
+```
