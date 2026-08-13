@@ -583,11 +583,14 @@ void loop() {
 .......................................................................
 ```
 This confirms that the board connected, detected and running the new firmware. The dots pattern is connectWiFi() function's Serial.print(".") loop, which only appears in the new code. But, it stuck at the WiFi connection stage and never getting past it.
+
 **Debugging**
+
 - Checked the Wifi name and password -> correct. 
 - Checking WiFi broadcasting Frequency because ESP32 support only 2.4 Ghz. I have first did a test with my iPhone hotspot. I have also added diagnostics instead of dots.
 
-```void connectWiFi() {
+```
+void connectWiFi() {
   Serial.print("Connecting to WiFi: ");
   Serial.println(WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -608,3 +611,183 @@ This confirms that the board connected, detected and running the new firmware. T
   }
 }
 ```
+Then build, upload and watch the Serial Monitor. With the diagnostic code Status=N will be print out every hald second instead of dots forever. Meaning of the numbers:
+```
+Code	Meaning
+0	Idle — hasn't really started trying yet
+1	No SSID available — the ESP32 can't see a network with that exact name at all
+4	Connect failed — network found, but authentication failed (wrong password, most likely)
+6	Disconnected
+```
+- compiled, run and upload the new code: ```status = 6```.
+- Number 6 can have a few different causes. Update the code: Explicitly set station mode and clear any stale state before connecting
+```
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(true);
+  delay(100);
+  ....
+  ...
+  }
+  - build, run and upload with the following output
+    ```
+    --- Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+WiFi connection FAILED after 20 attempts.
+Connecting to WiFiiPhone
+status=6
+status=6
+```
+- Added a length check to catch invisible characters to check the correctness of wifi_ssid and wifi_password.
+```
+Serial.print("SSID length: ");
+Serial.println(strlen(WIFI_SSID));
+Serial.print("Password length: ");
+Serial.println(strlen(WIFI_PASSWORD));
+```
+- After build, run, upload, the board has been connected to iphone wifi: status=3 with IP address 172.20.10.5.
+- After this temporarly test I have switched to home Wifi credentials. I only enabled 2.4 GHz and tested again with the result:
+```
+Executing task: platformio device monitor --- Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1 --- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time --- More details at https://bit.ly/pio-monitor-filters --- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H status=6 status=6 status=6 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 WiFi connection FAILED after 20 attempts. Connecting to WiFiZyxel_CF21 SSID length: 10 Password length: 10 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 status=1 WiFi connection FAILED after 20 attempts. Connecting to MQTT broker...Failed to connect to MQTT broker, rc=-2 Retrying in 5 seconds... Connecting to MQTT broker...Failed to connect to MQTT broker, rc=-2 Retrying in 5 seconds... Connecting to MQTT broker...Failed to connect to MQTT broker, rc=-2 Retrying in 5 seconds... Connecting to MQTT broker...Failed to connect to MQTT broker, rc=-2 Retrying in 5 seconds...
+```
+Status=1 means that ESP32 cannot find my home wifi router. After this I have checked the router config and saw that 2.4 GHz and 5GHz were both enabled together. After that I have deactivated Mesh so that only 2.4 Ghz was active. Rebuild, upload with the same result status = 1. After this result I have checked the WiFi channel because ESP 32 scans wifi channels from 1-11. It was set to auto and I set it to 6. After rebuild the result was the same. To deepen the debugging I added to the code WiFi scan:
+
+```
+void scanNetworks() {
+  Serial.println("Scanning for WiFi networks...");
+  int n = WiFi.scanNetworks();
+  if (n == 0) {
+    Serial.println("No networks found at all.");
+  } else {
+    Serial.print(n);
+    Serial.println(" networks found:");
+    for (int i = 0; i < n; i++) {
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (RSSI: ");
+      Serial.print(WiFi.RSSI(i));
+      Serial.println(")");
+    }
+  }
+}
+```
+then call it in setup() before connectWiFi().
+```
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  scanNetworks();
+  connectWiFi();
+  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+}
+```
+- rebuild and upload. The result was:
+
+```
+--- Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+No networks found at all.
+Connecting to WiFiZyxel_CF21
+SSID length: 10
+Password length: 10
+status=6
+status=6
+status=6
+status=6
+status=6
+status=6
+
+.......
+```
+This shows that zero networks found at all. In a normal home environment a scan should find at least few networks. The most likely cause is that WiFi radio wasn't in the right mode yet when the scan ran. Update the scanNetworks function with station mode and add some delay. 
+
+```
+void scanNetworks() {
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(500);
+
+  Serial.println("Scanning for WiFi networks...");
+  int n = WiFi.scanNetworks();
+  Serial.print("Scan returned: ");
+  Serial.println(n);
+
+  if (n <= 0) {
+    Serial.println("No networks found at all.");
+  } else {
+    for (int i = 0; i < n; i++) {
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (RSSI: ");
+      Serial.print(WiFi.RSSI(i));
+      Serial.println(")");
+    }
+  }
+}
+```
+Rebuild, upload with the same result that no networks found at all. Then I just run a only WiFi scan, nothing else to check whether in the rest of the code somehow interfering with this code by creating a new project wifi-scan-test. 
+
+```
+#include <Arduino.h>
+#include <WiFi.h>
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  WiFi.mode(WIFI_STA);
+  delay(500);
+  int n = WiFi.scanNetworks();
+  Serial.print("Networks found: ");
+  Serial.println(n);
+  for (int i = 0; i < n; i++) {
+    Serial.println(WiFi.SSID(i));
+  }
+}
+
+void loop() {}
+```
+After running this code, only one network is found, my printer. This result shows that ESP32 Wifi radio and antenna are genuinely working. It scan and detect a network. The earlier zero networks result weren't hardware defect or library conflict after all. That also means my home router isnt visible frome ESP32. The likely explanation is the signal range, not a bug at all. After this reasoning I have just sit next to the router and scanned again the network with this result:
+
+```
+Executing task in folder wifi-scan-test: platformio device monitor 
+--- Terminal on /dev/cu.usbmodem206EF13285D82 | 9600 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+Networks found: 2
+DIRECT-94-HP M140 LaserJet
+Zyxel_CF21
+```
+This confirmed cleanly the signal-range issue the whole time and not a bug, not a router misconfiguration and not a hardware defect. This means the sensor node needs to be reasonably close to the router. Then I have run my bosporus project and "voilà!". It connected to home WiFi and to MQTT brocker. I could not read the DHT Sensor readings because I did not correct wired up. After fixing that issue, the result:
+
+```
+Executing task: platformio device monitor --- Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1 --- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time --- More details at https://bit.ly/pio-monitor-filters --- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H Scan returned: 1 1: Zyxel_CF21 (RSSI: -92) Connecting to WiFiZyxel_CF21 SSID length: 10 Password length: 10 status=6 status=3 WiFi connected, IP address: 192.168.1.195 Connecting to MQTT broker...Connected to MQTT broker Publishing: {"temperature": 27.4, "humidity": 36.5} Publishing: {"temperature": 27.4, "humidity": 36.4} Publishing: {"temperature": 27.4, "humidity": 36.4} Publishing: {"temperature": 27.4, "humidity": 36.3} Publishing: {"temperature": 27.4, "humidity": 36.3} Publishing: {"temperature": 27.4, "humidity": 36.3} Publishing: {"temperature": 27.4, "humidity": 36.3} Publishing: {"temperature": 27.4, "humidity": 36.4} Publishing: {"temperature": 27.4, "humidity": 36.4} Publishing: {"temperature": 27.4, "humidity": 36.5} Publishing: {"temperature": 27.4, "humidity": 36.5} Publishing: {"temperature": 27.4, "humidity": 36.5} Publishing: {"temperature": 27.4, "humidity": 36.6} Publishing: 
+```
+Adding that measured RSSI of -92 dBm at ~5m line-of-sight — weaker than typical for this distance, likely a combination of the board's small embedded antenna and local RF conditions. Confirmed functional despite the weak signal; would investigate further (antenna placement, dedicated access point) in a production deployment.
+
+
