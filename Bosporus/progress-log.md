@@ -483,8 +483,10 @@ confirmed working end-to-end from the Mac.
     adafruit/Adafruit Unified Sensor@^1.1.14
     knolleary/PubSubClient@^2.8
 ```
+
 - Update src/main.cpp
-```#include <Arduino.h>
+```
+#include <Arduino.h>
 #include <DHT.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
