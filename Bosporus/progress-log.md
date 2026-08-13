@@ -484,8 +484,7 @@ confirmed working end-to-end from the Mac.
     knolleary/PubSubClient@^2.8
 ```
 - Update src/main.cpp
-```
-#include <Arduino.h>
+```#include <Arduino.h>
 #include <DHT.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
