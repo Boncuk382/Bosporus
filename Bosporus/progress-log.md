@@ -477,7 +477,18 @@ confirmed working end-to-end from the Mac.
 - Write the gateway-side Python script that subscribes to the sensor topic and writes readings into SQLite
 
 **Update ESP32 Firmware with Wifi Connection**
-- Creation of secret.h file in include, which contains WIFI_SSID and WIFI_PASSWORD. This file is added to .gitignore. This way, the file exists on my machine and compiles fine locally. But, Git will never track or upload it.
+- Creation of secret.h file in include, which contains WIFI_SSID and WIFI_PASSWORD.
+```#pragma once
+#define WIFI_SSID "wlan_name"
+#define WIFI_PASSWORD "wlan_passwort"```
+
+- This file is added to .gitignore. ```.pio
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+.include/secrets.h```
+This way, the file exists on my machine and compiles fine locally. But, Git will never track or upload it. 
 - Adding MQTT library to platformio.ini ```lib_deps =
     adafruit/DHT sensor library@^1.4.6
     adafruit/Adafruit Unified Sensor@^1.1.14
@@ -485,8 +496,7 @@ confirmed working end-to-end from the Mac.
 ```
 
 - Update src/main.cpp
-```
-#include <Arduino.h>
+```#include <Arduino.h>
 #include <DHT.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
