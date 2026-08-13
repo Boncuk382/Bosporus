@@ -476,3 +476,86 @@ confirmed working end-to-end from the Mac.
 - Update the ESP32 firmware to connect to WiFi and publish real sensor readings via MQTT
 - Write the gateway-side Python script that subscribes to the sensor topic and writes readings into SQLite
 
+**Update ESP32 Firmware with Wifi Connection**
+- Creation of secret.h file in include, which contains WIFI_SSID and WIFI_PASSWORD. This file is added to .gitignore. This way, the file exists on my machine and compiles fine locally. But, Git will never track or upload it.
+- Adding MQTT library to platformio.ini ```lib_deps =
+    adafruit/DHT sensor library@^1.4.6
+    adafruit/Adafruit Unified Sensor@^1.1.14
+    knolleary/PubSubClient@^2.8
+```
+- Update src/main.cpp
+```
+#include <Arduino.h>
+#include <DHT.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include "secrets.h"
+
+#define DHTPIN 2
+#define DHTTYPE DHT22
+
+const char* MQTT_BROKER = "192.168.1.169";   //  Pi's IP
+const int   MQTT_PORT   = 1883;
+const char* MQTT_TOPIC  = "sensor/room1/climate";  // matches architecture.md
+const char* MQTT_CLIENT_ID = "esp32-sensor-node";
+
+DHT dht(DHTPIN, DHTTYPE);
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
+
+void connectWiFi() {
+  Serial.print("Connecting to WiFi");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("WiFi connected, IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void connectMQTT() {
+  while (!mqttClient.connected()) {
+    Serial.print("Connecting to MQTT broker...");
+    if (mqttClient.connect(MQTT_CLIENT_ID)) {
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" - retrying in 5s");
+      delay(5000);
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  connectWiFi();
+  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+}
+
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) connectWiFi();
+  if (!mqttClient.connected()) connectMQTT();
+  mqttClient.loop();
+
+  delay(2000);
+
+  float humidity = dht.readHumidity();
+  float tempC = dht.readTemperature();
+
+  if (isnan(humidity) || isnan(tempC)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+
+  char payload[64];
+  snprintf(payload, sizeof(payload), "{\"temperature\": %.1f, \"humidity\": %.1f}", tempC, humidity);
+
+  Serial.print("Publishing: ");
+  Serial.println(payload);
+  mqttClient.publish(MQTT_TOPIC, payload);
+}
+```
