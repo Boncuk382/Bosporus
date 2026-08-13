@@ -356,7 +356,10 @@ Linux buildroot 6.12.61-v7l #1 SMP Tue Jul 28 18:07:57 CEST 2026 armv7l GNU/Linu
 ```
 
 ✅ All three packages confirmed present and correctly installed.
-## *11.08.2026 –* – Phase 3: Integration
+
+---
+
+## *11.08.2026 – 13.08.2026* – Phase 3: Integration
 
 ### What I did
 
@@ -476,32 +479,38 @@ confirmed working end-to-end from the Mac.
 - Update the ESP32 firmware to connect to WiFi and publish real sensor readings via MQTT
 - Write the gateway-side Python script that subscribes to the sensor topic and writes readings into SQLite
 
-**Update ESP32 Firmware with Wifi Connection**
-- Creation of secret.h file in include, which contains WIFI_SSID and WIFI_PASSWORD.
-```#pragma once
+**Update ESP32 Firmware with WiFi Connection**
+- Creation of `secrets.h` file in `include/`, which contains `WIFI_SSID` and `WIFI_PASSWORD`.
+```cpp
+#pragma once
 #define WIFI_SSID "wlan_name"
-#define WIFI_PASSWORD "wlan_passwort" ```
+#define WIFI_PASSWORD "wlan_passwort"
+```
 
-- This file is added to .gitignore.
+- This file is added to `.gitignore`.
 
-```.pio
+```
+.pio
 .vscode/.browse.c_cpp.db*
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-.include/secrets.h```
+include/secrets.h
+```
 
-This way, the file exists on my machine and compiles fine locally. But, Git will never track or upload it. 
-- Adding MQTT library to platformio.ini
+This way, the file exists on my machine and compiles fine locally. But, Git will never track or upload it.
+- Adding MQTT library to `platformio.ini`
 
-```lib_deps =
+```ini
+lib_deps =
     adafruit/DHT sensor library@^1.4.6
     adafruit/Adafruit Unified Sensor@^1.1.14
     knolleary/PubSubClient@^2.8
 ```
 
-- Update src/main.cpp
-```#include <Arduino.h>
+- Update `src/main.cpp`
+```cpp
+#include <Arduino.h>
 #include <DHT.h>
 #include <WiFi.h>
 #include <PubSubClient.h> // MQTT client library publishes readings to Pi's Mosquitto broker
@@ -573,7 +582,8 @@ void loop() {
   Serial.print("Publishing: ");
   Serial.println(payload);
   mqttClient.publish(MQTT_TOPIC, payload);
-}```
+}
+```
 - Compiled new code in main.cpp and got this:
 ```
 --Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1
@@ -619,19 +629,19 @@ Code	Meaning
 4	Connect failed — network found, but authentication failed (wrong password, most likely)
 6	Disconnected
 ```
-- compiled, run and upload the new code: ```status = 6```.
+- compiled, run and upload the new code: `status = 6`.
 - Number 6 can have a few different causes. Update the code: Explicitly set station mode and clear any stale state before connecting
-```
+```cpp
 void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect(true);
   delay(100);
-  ....
-  ...
-  }
-  - build, run and upload with the following output
-    ```
-    --- Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1
+  // ...rest unchanged from the version above...
+}
+```
+- build, run and upload with the following output:
+```
+--- Terminal on /dev/cu.usbmodem206EF13285D82 | 115200 8-N-1
 --- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
 --- More details at https://bit.ly/pio-monitor-filters
 --- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
