@@ -800,4 +800,144 @@ Executing task: platformio device monitor --- Terminal on /dev/cu.usbmodem206EF1
 ```
 Adding that measured RSSI of -92 dBm at ~5m line-of-sight — weaker than typical for this distance, likely a combination of the board's small embedded antenna and local RF conditions. Confirmed functional despite the weak signal; would investigate further (antenna placement, dedicated access point) in a production deployment.
 
+**Adding an MQTT library for Python via Buildroot**
+Python's standard library doesn't include MQTT support. I have to add python-paho-mqtt package through menuconfig. The rebuild the image, copy to the SD card and flash onto the Pi. 
 
+The following script is the application code for the gateway. 
+
+```
+import json
+import sqlite3
+import time
+import paho.mqtt.client as mqtt
+
+MQTT_BROKER = "localhost"  # script runs ON the Pi, same machine as the broker
+MQTT_PORT = 1883
+MQTT_TOPIC = "sensor/room1/climate"
+
+DB_PATH = "/root/bosporus.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS readings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp INTEGER NOT NULL,
+            temperature REAL,
+            humidity REAL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected to broker, rc={rc}")
+    client.subscribe(MQTT_TOPIC)
+
+def on_message(client, userdata, msg):
+    try:
+        payload = json.loads(msg.payload.decode())
+        temperature = payload.get("temperature")
+        humidity = payload.get("humidity")
+
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
+            "INSERT INTO readings (timestamp, temperature, humidity) VALUES (?, ?, ?)",
+            (int(time.time()), temperature, humidity)
+        )
+        conn.commit()
+        conn.close()
+
+        print(f"Stored: temp={temperature}, humidity={humidity}")
+    except Exception as e:
+        print(f"Failed to process message: {e}")
+
+def main():
+    init_db()
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(MQTT_BROKER, MQTT_PORT)
+    client.loop_forever()
+
+if __name__ == "__main__":
+    main()
+```
+This application, I named it as bosporus_subscriber.py, created the table for sensor data, pass the read temperature and humidty data to MQTT brocker by connecting to it, and listen continuously the sensor data which are available at the output of the ESP32 and parse the JSON file of the MQTT protocol. I created file directly in the terminal by the command **cat > ~/bosporus_subscriber.py << 'EOF'** at the beginning tof the script file. This previously named script file as **bosporus_subscriber.py** renamed later on as **gateway.py** because of the previously defined arhitecture as gateway. 
+
+After the image with python package, python-paho-mqtt has been flashed on to the Pi. While I was flashing I faced the following issue: trying accessing PI with ssh with the know IP address 192.168.1.169 resulted with permission denied. The problem was solved by running the command **ssh -keygen -R 192.168.1.169**. The issue was that SSH serve has a unique host key - a cryptographic identity. This will be deleted after each reflash. At the first time of the accessing the ssh asks, security reasons, so do you trust this device? After saying yes, the access has been granted. But after reflash, the host key is not the same and SSH refuse the access. Thefore we need to tell it with the command above handle this device as a new one so that user can confirm again the trustnees.   
+
+So far so good, after re flushing the device, tested the availability of paho-mqtt with **python3 -c "import paho.mqtt.client; print('paho-mqtt is available')"** I have copied the script onto the Pi and run it manually. The reason why I have copied this file over the network is so that I can test it faster instead and flashing it with a new image which would then include this file. 
+
+```
+scp bosporus_subscriber.py root@192.168.1.169:/root/
+python3 /root/bosporus_subscriber.py
+```
+after running the script, I have received the error message
+
+```
+# python3 /root/bosporus_subscriber.py
+Traceback (most recent call last):
+  File "/root/bosporus_subscriber.py", line 2, in <module>
+    import sqlite3
+ModuleNotFoundError: No module named 'sqlite3'
+#
+```
+ Although I have selected the sqlite module using docker make menuconfig I received about this error message. The root cause is when the sub-options of a package are changed, the package is not automatically rebuilt. So thus I ran the command **make python3-reconfigure**. This re-runs Python3's build from its configure step. Then repeated whole flushing process. After running the script on the PI after reflush I tackeled another error:
+
+ ```
+# python3 /root/bosporus_subscriber.py
+python3: can't open file '/root/bosporus_subscriber.py': [Errno 2] No such file or directory
+#
+```
+ The reason of the error was that the script wasnt build with the new image. So I have to copy it again via network into the PI. After running the script again on the PI, this time it worked out:
+
+ ```
+/root/bosporus_subscriber.py:49: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
+  client = mqtt.Client()
+Connected to broker, rc=0
+```
+by tackling another issue: This is because the Mosquitto config wasnt't included in the new image and just deleted by the new flushing. Then I have Kill the previous PI and restart the Mosquitto.
+
+```
+s | grep mosquitto
+kill <that PID>
+mosquitto -d -c /etc/mosquitto/mosquitto.conf
+netstat -tuln | grep 1883
+```
+Then it worked. 
+
+```
+root/bosporus_subscriber.py:49: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
+  client = mqtt.Client()
+Connected to broker, rc=0
+Stored: temp=29.5, humidity=33.0
+Stored: temp=29.5, humidity=33.1
+Stored: temp=29.5, humidity=32.9
+Stored: temp=29.5, humidity=33.0
+Stored: temp=29.5, humidity=33.0
+Stored: temp=29.5, humidity=33.0
+Stored: temp=29.5, humidity=33.0
+```
+With a second SSH session I have printed the read sensor data into a table:
+
+```
+ssh root@192.168.1.169
+sqlite3 /root/bosporus.db "SELECT * FROM readings ORDER BY id DESC LIMIT 5;
+```
+Voila!
+
+```
+╭────┬───────────┬─────────────┬──────────╮
+│ id │ timestamp │ temperature │ humidity │
+╞════╪═══════════╪═════════════╪══════════╡
+│ 56 │       968 │        29.5 │     33.1 │
+│ 55 │       966 │        29.5 │     33.0 │
+│ 54 │       964 │        29.5 │     33.1 │
+│ 53 │       962 │        29.5 │     33.0 │
+│ 52 │       960 │        29.5 │     33.0 │
+╰────┴───────────┴─────────────┴──────────╯
+#
+
+
+ 
