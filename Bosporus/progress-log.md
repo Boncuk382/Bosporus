@@ -938,6 +938,89 @@ Voila!
 │ 52 │       960 │        29.5 │     33.0 │
 ╰────┴───────────┴─────────────┴──────────╯
 #
+So far the script gateway.py and Mosquitto config added via network without including into the image. Let's include them permanent into the image via a Buildroot rootfs overlay. First of all make directories and then copy the gateway script itself:
+
+```
+mkdir -p ~/bosporus-overlay/opt/bosporus
+mkdir -p ~/bosporus-overlay/etc/init.d
+cp ~/gateway.py ~/bosporus-overlay/opt/bosporus/gateway.py
+```
+Then create the mosquitto config file in mosquitto directory, simply using terminal
+
+```
+mkdir -p ~/bosporus-overlay/etc/mosquitto
+cat > ~/bosporus-overlay/etc/mosquitto/mosquitto.conf << 'EOF'
+listener 1883 0.0.0.0
+allow_anonymous true
+EOF
+```
+An init script is necessary so that the gateway.py starts automatically at boot. 
+
+```
+cat > ~/bosporus-overlay/etc/init.d/S60bosporus-gateway << 'EOF'
+#!/bin/sh
+DAEMON=/usr/bin/python3
+SCRIPT=/opt/bosporus/gateway.py
+PIDFILE=/var/run/bosporus-gateway.pid
+
+start() {
+	printf "Starting bosporus-gateway: "
+	start-stop-daemon -S -q -b -m -p $PIDFILE --exec $DAEMON -- $SCRIPT
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+stop() {
+	printf "Stopping bosporus-gateway: "
+	start-stop-daemon -K -q -p $PIDFILE
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+restart() {
+	stop
+	start
+}
+case "$1" in
+  start) start ;;
+  stop) stop ;;
+  restart|reload) restart ;;
+  *) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac
+exit $?
+EOF
+chmod +x ~/bosporus-overlay/etc/init.d/S60bosporus-gateway
+```
+After I've setup the directories on Mac I need to copy them into the docker container.
+
+```
+docker cp ~/bosporus-overlay buildroot-builder:/home/builder/buildroot/board-bosporus-overlay
+```
+Run the following commands so that the buildroot integrate the overlay and configure it in menuconfig.
+
+```
+docker start -ai buildroot-builder
+cd buildroot
+make menuconfig
+```
+In menuconfig navigate to System configuration -> Root filesystem overlay directories then create the above directory also in the menuconfig: **boad-bosposrus-overlay**. Afterwards the rebuild process copying into the sd card and verifying:
+
+```
+make
+docker cp buildroot-builder:/home/builder/buildroot/output/images/sdcard.img ~/bosporus-sdcard.img
+ssh-keygen -R 192.168.1.169
+ssh root@192.168.1.169
+ps | grep -E 'mosquitto|gateway'
+netstat -tuln | grep 1883
+sqlite3 /opt/bosporus/bosporus.db "SELECT * FROM readings ORDER BY id DESC LIMIT 3;"
+```
+This resulted with 
+╭────┬───────────┬─────────────┬──────────╮
+│ id │ timestamp │ temperature │ humidity │
+╞════╪═══════════╪═════════════╪══════════╡
+│ 56 │       968 │        29.5 │     33.1 │
+│ 55 │       966 │        29.5 │     33.0 │
+│ 54 │       964 │        29.5 │     33.1 │
+│ 53 │       962 │        29.5 │     33.0 │
+│ 52 │       960 │        29.5 │     33.0 │
+╰────┴───────────┴─────────────┴──────────╯
+With this result the Phase 3 completed: Sensor -> WiFi -> MQTT -> auto-starting Python subscriber -> SQLite.  
 
 
  
