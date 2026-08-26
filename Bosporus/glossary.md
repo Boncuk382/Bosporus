@@ -105,6 +105,7 @@ components, pre-packaged). Common mix-up, worth keeping straight for interviews.
 | RTOS | Real-Time Operating System |
 | rootfs | Root Filesystem |
 | Git / GitHub / GitLab | Git is the free, open-source version-control tool itself; GitHub (owned by Microsoft) and GitLab (an independent public company) are two competing commercial platforms that host Git repositories and add collaboration features on top. |
+| Flask | Flask is a backend (server-side) framework, query the database, apply logic and return HTML or JSON |
 
 ## Certifications (seen printed on the board)
 
