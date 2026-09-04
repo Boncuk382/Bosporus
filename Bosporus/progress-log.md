@@ -1022,5 +1022,69 @@ This resulted with
 ╰────┴───────────┴─────────────┴──────────╯
 With this result the Phase 3 completed: Sensor -> WiFi -> MQTT -> auto-starting Python subscriber -> SQLite.  
 
+**Fixing Clock Issue**
+Start docker, enter the buildroot folder then go inside menuconfig. Then
+
+```
+Target packages -> Networking applications -> ntp
+```
+In sub-menu enable **sntp**.
+**Flask-Dashboard**
+Flask is a web framework, a tool that lets a Python program act as a web server. It makes the Python scrip able to listen for HTTP requests and respond with temperature and humidity data.
+
+Enabling Flask:
+```
+Target packages -> Interpreter languages and scripting -> python3 -> external modules -> python-flask
+make
+```
+Flask isn't part of Python's standard library. It's a separate package that needs to be present on the Pi's filesystem. Adding **python-flask** is necessary.
+Then, I created the dashboard app on Mac and saved on the project folder on Mac. Before adding the dashboard.py to the overlay, check if the build succeeded.
+
+```
+ls -lh output/images/sdcard.img
+```
+then, add dashboard.py
+
+```
+cp ~/dashboard.py ~/bosporus-overlay/opt/bosporus/dashboard.py
+```
+Then get the updated overlay into the container. An overlay is a plain folder on the build machine. Buildroot copies its contents onto the target's root filesystem, ath the same paths, as one of the final build steps. A file at bosporus-overlay/opt/bosporus/gateway.py ends up at /opt/bosporus/gateway.py on the Pi. This is how custom application files become a permanent part of the image. They survive reflashes, unlike files added manually over SSH/scp. 
+
+```
+docker exec buildroot-builder rm -rf /home/builder/buildroot/board-bosporus-overlay
+docker cp ~/bosporus-overlay buildroot-builder:/home/builder/buildroot/board-bosporus-overlay
+```
+Then, Rebuild. This picks up the overlay changes without redoing the whole toolchain.
+
+```
+docker start -ai buildroot-builder
+cd buildroot
+make
+```
+Then, get the image onto Mac and reflash -> card into Pi -> power cycle
+After booting check if Flask running
+
+```
+ssh root@192.168.1.169
+python3 /opt/bosporus/dashboard.py
+```
+results as
+```
+# python3 /opt/bosporus/dashboard.py
+ * Serving Flask app 'dashboard'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.169:5000
+```
+That's a full success. Flask is running, listening on 0.0.0.
+Then check the dashboard on Browser, it did not work on Firefox, but on Safari:
+```
+http://192.168.1.169:5000
+```
+![Sensor Readings](images/dashboard-measurement.jpeg)
+
+
 
  
