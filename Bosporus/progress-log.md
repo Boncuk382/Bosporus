@@ -867,7 +867,7 @@ This application, I named it as bosporus_subscriber.py, created the table for se
 
 After the image with python package, python-paho-mqtt has been flashed on to the Pi. While I was flashing I faced the following issue: trying accessing PI with ssh with the know IP address 192.168.1.169 resulted with permission denied. The problem was solved by running the command **ssh -keygen -R 192.168.1.169**. The issue was that SSH serve has a unique host key - a cryptographic identity. This will be deleted after each reflash. At the first time of the accessing the ssh asks, security reasons, so do you trust this device? After saying yes, the access has been granted. But after reflash, the host key is not the same and SSH refuse the access. Thefore we need to tell it with the command above handle this device as a new one so that user can confirm again the trustnees.   
 
-So far so good, after re flushing the device, tested the availability of paho-mqtt with **python3 -c "import paho.mqtt.client; print('paho-mqtt is available')"** I have copied the script onto the Pi and run it manually. The reason why I have copied this file over the network is so that I can test it faster instead and flashing it with a new image which would then include this file. 
+So far so good, after re-flashing the device, tested the availability of paho-mqtt with **python3 -c "import paho.mqtt.client; print('paho-mqtt is available')"** I have copied the script onto the Pi and run it manually. The reason why I have copied this file over the network is so that I can test it faster instead and flashing it with a new image which would then include this file. 
 
 ```
 scp bosporus_subscriber.py root@192.168.1.169:/root/
@@ -883,24 +883,24 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'sqlite3'
 #
 ```
- Although I have selected the sqlite module using docker make menuconfig I received about this error message. The root cause is when the sub-options of a package are changed, the package is not automatically rebuilt. So thus I ran the command **make python3-reconfigure**. This re-runs Python3's build from its configure step. Then repeated whole flushing process. After running the script on the PI after reflush I tackeled another error:
+ Although I have selected the sqlite module using docker make menuconfig I received about this error message. The root cause is when the sub-options of a package are changed, the package is not automatically rebuilt. So thus I ran the command **make python3-reconfigure**. This re-runs Python3's build from its configure step. Then repeated whole flashing process. After running the script on the PI after reflush I tackled another error:
 
  ```
 # python3 /root/bosporus_subscriber.py
 python3: can't open file '/root/bosporus_subscriber.py': [Errno 2] No such file or directory
 #
 ```
- The reason of the error was that the script wasnt build with the new image. So I have to copy it again via network into the PI. After running the script again on the PI, this time it worked out:
+ The reason for the error was that the script hadn't made it onto the new image — it only ever existed on the SD card via the manual network copy, and that gets wiped on every reflash. So I copied it again over the network to the Pi. After running the script again, this time it worked out:
 
  ```
 /root/bosporus_subscriber.py:49: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
   client = mqtt.Client()
 Connected to broker, rc=0
 ```
-by tackling another issue: This is because the Mosquitto config wasnt't included in the new image and just deleted by the new flushing. Then I have Kill the previous PI and restart the Mosquitto.
+by tackling another issue: the Mosquitto config wasn't included in the new image either, wiped by the same reflash. I killed the previous Mosquitto process and restarted it:
 
 ```
-s | grep mosquitto
+ps | grep mosquitto
 kill <that PID>
 mosquitto -d -c /etc/mosquitto/mosquitto.conf
 netstat -tuln | grep 1883
@@ -999,7 +999,7 @@ docker start -ai buildroot-builder
 cd buildroot
 make menuconfig
 ```
-In menuconfig navigate to System configuration -> Root filesystem overlay directories then create the above directory also in the menuconfig: **boad-bosposrus-overlay**. Afterwards the rebuild process copying into the sd card and verifying:
+In menuconfig navigate to System configuration -> Root filesystem overlay directories then create the above directory also in the menuconfig: **board-bosporus-overlay**. Afterwards the rebuild process copying into the sd card and verifying:
 
 ```
 make
@@ -1010,7 +1010,8 @@ ps | grep -E 'mosquitto|gateway'
 netstat -tuln | grep 1883
 sqlite3 /opt/bosporus/bosporus.db "SELECT * FROM readings ORDER BY id DESC LIMIT 3;"
 ```
-This resulted with 
+This resulted with:
+```
 ╭────┬───────────┬─────────────┬──────────╮
 │ id │ timestamp │ temperature │ humidity │
 ╞════╪═══════════╪═════════════╪══════════╡
@@ -1020,68 +1021,85 @@ This resulted with
 │ 53 │       962 │        29.5 │     33.0 │
 │ 52 │       960 │        29.5 │     33.0 │
 ╰────┴───────────┴─────────────┴──────────╯
-With this result the Phase 3 completed: Sensor -> WiFi -> MQTT -> auto-starting Python subscriber -> SQLite.  
+```
+With this result Phase 3 is complete: sensor → WiFi → MQTT → auto-starting Python subscriber → SQLite.
 
-**Fixing Clock Issue**
-Start docker, enter the buildroot folder then go inside menuconfig. Then
+---
+
+## Phase 4: Fixing the clock, and a Flask dashboard
+
+### Fixing the clock issue
+
+Start Docker, enter the buildroot folder, then go into `menuconfig`:
 
 ```
 Target packages -> Networking applications -> ntp
 ```
-In sub-menu enable **sntp**.
-**Flask-Dashboard**
-Flask is a web framework, a tool that lets a Python program act as a web server. It makes the Python scrip able to listen for HTTP requests and respond with temperature and humidity data.
+In the sub-menu, enable **sntp**.
+
+### Flask dashboard
+
+Flask is a web framework — a tool that lets a Python program act as a web server. It makes the Python script able to listen for HTTP requests and respond with temperature and humidity data.
 
 Enabling Flask:
 ```
-Target packages -> Interpreter languages and scripting -> python3 -> external modules -> python-flask
+Target packages -> Interpreter languages and scripting -> python3 -> External python modules -> python-flask
 make
 ```
-Flask isn't part of Python's standard library. It's a separate package that needs to be present on the Pi's filesystem. Adding **python-flask** is necessary.
-Then, I created the dashboard app on Mac and saved on the project folder on Mac. Before adding the dashboard.py to the overlay, check if the build succeeded.
+Flask isn't part of Python's standard library. It's a separate package that needs to be present on the Pi's filesystem, hence adding **python-flask**.
+
+I created the dashboard app on my Mac and saved it in the project folder there. Before adding `dashboard.py` to the overlay, I checked that the build had succeeded:
 
 ```
 ls -lh output/images/sdcard.img
 ```
-then, add dashboard.py
+Then added `dashboard.py`:
 
 ```
 cp ~/dashboard.py ~/bosporus-overlay/opt/bosporus/dashboard.py
 ```
-Then get the updated overlay into the container. An overlay is a plain folder on the build machine. Buildroot copies its contents onto the target's root filesystem, ath the same paths, as one of the final build steps. A file at bosporus-overlay/opt/bosporus/gateway.py ends up at /opt/bosporus/gateway.py on the Pi. This is how custom application files become a permanent part of the image. They survive reflashes, unlike files added manually over SSH/scp. 
+Then got the updated overlay into the container. An overlay is a plain folder on the build machine. Buildroot copies its contents onto the target's root filesystem, at the same paths, as one of the final build steps. A file at `bosporus-overlay/opt/bosporus/gateway.py` ends up at `/opt/bosporus/gateway.py` on the Pi. This is how custom application files become a permanent part of the image — they survive reflashes, unlike files added manually over SSH/scp.
 
 ```
 docker exec buildroot-builder rm -rf /home/builder/buildroot/board-bosporus-overlay
 docker cp ~/bosporus-overlay buildroot-builder:/home/builder/buildroot/board-bosporus-overlay
 ```
-Then, Rebuild. This picks up the overlay changes without redoing the whole toolchain.
+Rebuilt — this picks up the overlay changes without redoing the whole toolchain:
 
 ```
 docker start -ai buildroot-builder
 cd buildroot
 make
 ```
-Then, get the image onto Mac and reflash -> card into Pi -> power cycle
-After booting check if Flask running
+Got the image onto the Mac, reflashed, card into Pi, power cycle. After booting, checked whether Flask was running:
 
 ```
 ssh root@192.168.1.169
 python3 /opt/bosporus/dashboard.py
 ```
-results as
+Result:
 
 ```
-	# python3 /opt/bosporus/dashboard.py
- 	* Serving Flask app 'dashboard'
- 	* Debug mode: off
-	WARNING: This is a development server. Do not use it in a production deployment. Use 	a production WSGI server instead.
-	 * Running on all addresses (0.0.0.0)
-	 * Running on http://127.0.0.1:5000
-	 * Running on http://192.168.1.169:5000
+# python3 /opt/bosporus/dashboard.py
+* Serving Flask app 'dashboard'
+* Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+* Running on all addresses (0.0.0.0)
+* Running on http://127.0.0.1:5000
+* Running on http://192.168.1.169:5000
 ```
-That's a full success. Flask is running, listening on 0.0.0.
-Then check the dashboard on Browser, it did not work on Firefox, but on Safari:
+That's a full success. Flask is running, listening on 0.0.0.0.
+
+Checked the dashboard in the browser at:
 ```
 http://192.168.1.169:5000
 ```
+It did not work in Firefox — likely its HTTPS-Only Mode, which forces an upgrade to `https://` even when `http://` is typed, and Flask's built-in dev server only speaks plain HTTP. It worked immediately in Safari, no changes needed on the Pi side, which supports that explanation.
+
+**Artifacts**
+
 ![Sensor Readings](images/dashboard-measurement.jpg)
+
+**Result**
+
+✅ Real timestamps confirmed via `sntp`. Dashboard reachable and rendering a live chart of temperature and humidity, served by Flask, running permanently via the overlay and starting automatically at boot — same as `gateway.py`. This completes the *"Live history of readings visible"* milestone from the original project plan.
