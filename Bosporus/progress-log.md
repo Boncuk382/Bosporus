@@ -937,7 +937,8 @@ Voila!
 │ 53 │       962 │        29.5 │     33.0 │
 │ 52 │       960 │        29.5 │     33.0 │
 ╰────┴───────────┴─────────────┴──────────╯
-#
+```
+
 So far the script gateway.py and Mosquitto config added via network without including into the image. Let's include them permanent into the image via a Buildroot rootfs overlay. First of all make directories and then copy the gateway script itself:
 
 ```
