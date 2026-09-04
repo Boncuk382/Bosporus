@@ -1069,22 +1069,19 @@ ssh root@192.168.1.169
 python3 /opt/bosporus/dashboard.py
 ```
 results as
+
 ```
-# python3 /opt/bosporus/dashboard.py
- * Serving Flask app 'dashboard'
- * Debug mode: off
-WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:5000
- * Running on http://192.168.1.169:5000
+	# python3 /opt/bosporus/dashboard.py
+ 	* Serving Flask app 'dashboard'
+ 	* Debug mode: off
+	WARNING: This is a development server. Do not use it in a production deployment. Use 	a production WSGI server instead.
+	 * Running on all addresses (0.0.0.0)
+	 * Running on http://127.0.0.1:5000
+	 * Running on http://192.168.1.169:5000
 ```
 That's a full success. Flask is running, listening on 0.0.0.
 Then check the dashboard on Browser, it did not work on Firefox, but on Safari:
 ```
 http://192.168.1.169:5000
 ```
-![Sensor Readings](images/dashboard-measurement.jpeg)
-
-
-
- 
+![Sensor Readings](images/dashboard-measurement.jpg)
